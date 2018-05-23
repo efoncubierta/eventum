@@ -1,0 +1,1 @@
+export { AWSDynamoDBMock } from "./AWSDynamoDBMock";

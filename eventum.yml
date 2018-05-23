@@ -1,0 +1,15 @@
+provider: AWS
+
+aws:
+  store:
+    journal:
+      tableName: Journals_dev
+    snapshot:
+      tableName: Snapshots_dev
+  stream:
+    event:
+      streamName: Events_dev
+
+snapshot:
+  retention:
+    count: 2

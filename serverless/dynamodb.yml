@@ -1,0 +1,36 @@
+Resources: 
+  JournalsDynamoDbTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: ${self:provider.environment.JOURNALS_TABLE}
+      AttributeDefinitions:
+        - AttributeName: aggregateId
+          AttributeType: S
+        - AttributeName: sequence
+          AttributeType: N
+      KeySchema:
+        - AttributeName: aggregateId
+          KeyType: HASH
+        - AttributeName: sequence
+          KeyType: RANGE
+      ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
+
+  SnapshotsDynamoDbTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: ${self:provider.environment.SNAPSHOTS_TABLE}
+      AttributeDefinitions:
+        - AttributeName: aggregateId
+          AttributeType: S
+        - AttributeName: sequence
+          AttributeType: N
+      KeySchema:
+        - AttributeName: aggregateId
+          KeyType: HASH
+        - AttributeName: sequence
+          KeyType: RANGE
+      ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1

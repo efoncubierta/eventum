@@ -1,0 +1,11 @@
+journal_createSnapshot:
+  handler: src/lambda/journal/createSnapshot.handler
+
+journal_getJournal:
+  handler: src/lambda/journal/getJournal.handler
+
+journal_saveEvents:
+  handler: src/lambda/journal/saveEvents.handler
+
+eventStream_publish:
+  handler: src/lambda/eventStream/publish.handler

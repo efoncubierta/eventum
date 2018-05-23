@@ -1,0 +1,1 @@
+export { AWSMock } from "./AWSMock";

@@ -1,0 +1,36 @@
+service:
+  name: eventum
+
+frameworkVersion: ">=1.0.0 <2.0.0"
+
+plugins:
+  - serverless-webpack
+
+provider:
+  name: aws
+  runtime: nodejs8.10
+  stage: dev
+  region: eu-west-1
+  environment:
+    JOURNALS_TABLE: Journals_${self:provider.stage}
+    SNAPSHOTS_TABLE: Snapshots_${self:provider.stage}
+  iamRoleStatements:
+    - Effect: Allow
+      Action:
+        - dynamodb:Query
+        - dynamodb:Scan
+        - dynamodb:GetItem
+        - dynamodb:PutItem
+        - dynamodb:UpdateItem
+        - dynamodb:DeleteItem
+        - dynamodb:BatchWriteItem
+      Resource: "arn:aws:dynamodb:*"
+
+package:
+  individually: true
+
+functions:
+  - ${file(serverless/functions.yml)}
+
+resources:
+  - ${file(serverless/dynamodb.yml)}
