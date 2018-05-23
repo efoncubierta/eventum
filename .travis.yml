@@ -4,10 +4,10 @@ node_js:
   - "8"
 
 install:
-  - npm run install:all
+  - npm run install
 
 script:
-  - npm run test:all
+  - npm run test
   - npm run codecov
 
 #notifications:
