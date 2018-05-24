@@ -31,7 +31,7 @@ function snapshotDynamoDBStoreTest() {
     });
 
     it("should get the lastest snapshot when multiple snapshots exists", (done) => {
-      const sampleSize = 100;
+      const sampleSize = 10;
       const aggregateId = TestDataGenerator.randomAggregateId();
       const startSequence = TestDataGenerator.randomSequence();
       const snapshots = TestDataGenerator.randomSnapshots(sampleSize, aggregateId, startSequence);
@@ -54,7 +54,7 @@ function snapshotDynamoDBStoreTest() {
     });
 
     it("should purge all snapshots as in CONFIG.snapshot.interval.count", (done) => {
-      const sampleSize = 100;
+      const sampleSize = 10;
       const aggregateId = TestDataGenerator.randomAggregateId();
       const startSequence = TestDataGenerator.randomSequence();
       const endSequence = startSequence + sampleSize - 1;

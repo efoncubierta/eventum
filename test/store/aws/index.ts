@@ -1,8 +1,8 @@
 // tslint:disable:no-unused-expression
 import "mocha";
 
-import journalDynamoDBStoreTest from "./JournalDynamoDBStoreTest";
-import snapshotDynamoDBStoreTest from "./SnapshotDynamoDBStoreTest";
+import journalDynamoDBStoreTest from "./JournalDynamoDBStore.test";
+import snapshotDynamoDBStoreTest from "./SnapshotDynamoDBStore.test";
 
 function awsStoreTest() {
   describe("Provider :: AWS", () => {

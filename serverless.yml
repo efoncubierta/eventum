@@ -14,6 +14,7 @@ provider:
   environment:
     JOURNALS_TABLE: Journals_${self:provider.stage}
     SNAPSHOTS_TABLE: Snapshots_${self:provider.stage}
+    EVENTS_STREAM: Events_${self:provider.stage}
   iamRoleStatements:
     - Effect: Allow
       Action:
@@ -34,3 +35,4 @@ functions:
 
 resources:
   - ${file(serverless/dynamodb.yml)}
+  - ${file(serverless/kinesis.yml)}

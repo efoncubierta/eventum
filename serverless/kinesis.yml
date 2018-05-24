@@ -1,0 +1,6 @@
+Resources: 
+  EventsStream:
+    Type: AWS::Kinesis::Stream
+    Properties:
+      Name: ${self:provider.environment.EVENTS_STREAM}
+      ShardCount: 5

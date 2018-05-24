@@ -31,7 +31,7 @@ function journalDynamoDBStoreTest() {
     });
 
     it("should save a sequence of events", (done) => {
-      const sampleSize = 100;
+      const sampleSize = 50;
       const aggregateId = TestDataGenerator.randomAggregateId();
       const startSequence = TestDataGenerator.randomSequence();
       const endSequence = startSequence + sampleSize - 1;
@@ -62,7 +62,7 @@ function journalDynamoDBStoreTest() {
     });
 
     it("should roll-back all events newer than a sequence number", (done) => {
-      const sampleSize = 100;
+      const sampleSize = 50;
       const rollBackSize = 20;
       const aggregateId = TestDataGenerator.randomAggregateId();
       const startSequence = TestDataGenerator.randomSequence();
@@ -97,7 +97,7 @@ function journalDynamoDBStoreTest() {
     });
 
     it("should roll-forward all events older than a sequence number", (done) => {
-      const sampleSize = 100;
+      const sampleSize = 50;
       const rollForwadSize = 20;
       const aggregateId = TestDataGenerator.randomAggregateId();
       const startSequence = TestDataGenerator.randomSequence();
