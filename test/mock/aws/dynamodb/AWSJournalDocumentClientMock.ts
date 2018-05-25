@@ -2,7 +2,7 @@ import { AWSDocumentClientMock } from "./AWSDocumentClientMock";
 import { InMemoryJournalStore } from "../../InMemoryJournalStore";
 
 export class AWSJournalDocumentClientMock implements AWSDocumentClientMock {
-  public static TABLE_NAME = "JOURNALS";
+  public static TABLE_NAME = "eventum-journals-test";
 
   public canHandleGet(params: any): boolean {
     return params.TableName === AWSJournalDocumentClientMock.TABLE_NAME;

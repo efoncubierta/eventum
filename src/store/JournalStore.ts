@@ -34,7 +34,7 @@ export interface JournalStore {
    *
    * @param events Array of events
    */
-  saveEvents(events: Event[]): Promise<JournalStoreBatchResponse>;
+  saveBatch(events: Event[]): Promise<JournalStoreBatchResponse>;
 
   /**
    * Remove a batch of events.
@@ -57,7 +57,7 @@ export interface JournalStore {
    *
    * @param events Events
    */
-  removeEvents(events: Event[]): Promise<JournalStoreBatchResponse>;
+  removeBatch(events: Event[]): Promise<JournalStoreBatchResponse>;
 
   /**
    * Roll events back to a certain sequence.
@@ -92,7 +92,7 @@ export interface JournalStore {
    * @param aggregateId Aggregate ID
    * @param sequence Sequence
    */
-  getEvent(aggregateId: string, sequence: number): Promise<Event>;
+  get(aggregateId: string, sequence: number): Promise<Event>;
 
   /**
    * Get the last event for a particular aggregate.
@@ -102,7 +102,7 @@ export interface JournalStore {
    *
    * @param aggregateId Aggregate ID
    */
-  getLastEvent(aggregateId: string): Promise<Event>;
+  getLast(aggregateId: string): Promise<Event>;
 
   /**
    * Get a range of events for a particular aggregate.
@@ -114,5 +114,5 @@ export interface JournalStore {
    * @param fromSequence Start sequence number. Default is 0
    * @param toSequence End sequence number. Default is Number.MAX_SAFE_INTEGER
    */
-  getEvents(aggregateId: string, fromSequence?: number, toSequence?: number): Promise<Event[]>;
+  getRange(aggregateId: string, fromSequence?: number, toSequence?: number): Promise<Event[]>;
 }

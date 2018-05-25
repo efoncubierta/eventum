@@ -3,12 +3,12 @@ provider: AWS
 aws:
   store:
     journal:
-      tableName: eventum-journals-dev
+      tableName: eventum-journals-test
     snapshot:
-      tableName: eventum-snapshots-dev
+      tableName: eventum-snapshots-test
   stream:
     event:
-      streamName: eventum-events-dev
+      streamName: eventum-events-test
       
 snapshot:
   retention:

@@ -17,7 +17,7 @@ export class JournalDynamoDBStore extends DynamoDBStore implements JournalStore 
     this.journalConfig = Eventum.config().aws.store.journal;
   }
 
-  public saveEvents(events: Event[]): Promise<JournalStoreBatchResponse> {
+  public saveBatch(events: Event[]): Promise<JournalStoreBatchResponse> {
     if (events.length === 0) {
       return;
     }
@@ -37,7 +37,7 @@ export class JournalDynamoDBStore extends DynamoDBStore implements JournalStore 
     });
   }
 
-  public removeEvents(events: Event[]): Promise<JournalStoreBatchResponse> {
+  public removeBatch(events: Event[]): Promise<JournalStoreBatchResponse> {
     if (events.length === 0) {
       return;
     }
@@ -165,7 +165,7 @@ export class JournalDynamoDBStore extends DynamoDBStore implements JournalStore 
       });
   }
 
-  public getEvent(aggregateId: string, sequence: number): Promise<Event> {
+  public get(aggregateId: string, sequence: number): Promise<Event> {
     const documentClient = new DynamoDB.DocumentClient();
 
     return new Promise((resolve, reject) => {
@@ -188,7 +188,7 @@ export class JournalDynamoDBStore extends DynamoDBStore implements JournalStore 
     });
   }
 
-  public getLastEvent(aggregateId: string): Promise<Event> {
+  public getLast(aggregateId: string): Promise<Event> {
     const documentClient = new DynamoDB.DocumentClient();
 
     /**
@@ -217,7 +217,7 @@ export class JournalDynamoDBStore extends DynamoDBStore implements JournalStore 
     });
   }
 
-  public getEvents(
+  public getRange(
     aggregateId: string,
     fromSequence: number = 0,
     toSequence: number = Number.MAX_SAFE_INTEGER

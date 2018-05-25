@@ -7,6 +7,18 @@ export class InMemorySnapshotStore {
   private static snapshots: Snapshot[] = [];
 
   /**
+   * Get a snapshot from the in-memory snapshots array.
+   *
+   * @param aggregateId Aggregate ID
+   * @param sequence Sequence
+   */
+  public static getSnapshot(aggregateId: string, sequence: number): Snapshot {
+    return this.snapshots.find((snapshot) => {
+      return snapshot.aggregateId === aggregateId && snapshot.sequence === sequence;
+    });
+  }
+
+  /**
    * Put a snapshot in the in-memory snapshots array. This action replace any existing
    * snapshot for the same aggregate ID and sequence number.
    *

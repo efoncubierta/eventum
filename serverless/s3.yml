@@ -1,0 +1,5 @@
+Resources: 
+  EventsBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: ${self:custom.aws.s3.events.bucketName}

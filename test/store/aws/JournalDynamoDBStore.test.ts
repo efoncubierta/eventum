@@ -40,20 +40,26 @@ function journalDynamoDBStoreTest() {
       const lastEvent = events[0]; // last one is the first one in reversed order
 
       journalStore
-        .saveEvents(events)
+        .saveBatch(events)
         .then(() => {
           // get all events just stored for the aggregate
-          return journalStore.getEvents(aggregateId, startSequence, endSequence);
+          return journalStore.getRange(aggregateId, startSequence, endSequence);
         })
         .then((events) => {
           // the number of events should match the events stored in step 1
           events.should.exist;
           events.should.be.length(sampleSize);
 
-          return journalStore.getLastEvent(aggregateId);
+          return journalStore.getLast(aggregateId);
         })
         .then((event) => {
           // the last event should match, despite the order in which it was saved
+          event.should.exist;
+          event.should.eql(lastEvent);
+
+          return journalStore.get(aggregateId, endSequence);
+        })
+        .then((event) => {
           event.should.exist;
           event.should.eql(lastEvent);
         })
@@ -72,20 +78,20 @@ function journalDynamoDBStoreTest() {
       const lastEvent = events[rollBackSize]; // last one will be in rollBackSize position after roll-back is performed
 
       journalStore
-        .saveEvents(events)
+        .saveBatch(events)
         .then(() => {
           // +1 or it'll delete 21 items
           return journalStore.rollbackTo(aggregateId, endSequence - rollBackSize + 1);
         })
         .then(() => {
-          return journalStore.getEvents(aggregateId, startSequence, endSequence);
+          return journalStore.getRange(aggregateId, startSequence, endSequence);
         })
         .then((events) => {
           // the number of events should match the events stored in step 1 minus those rolled back
           events.should.exist;
           events.should.be.length(sampleSize - rollBackSize);
 
-          return journalStore.getLastEvent(aggregateId);
+          return journalStore.getLast(aggregateId);
         })
         .then((event) => {
           // the last event should match, despite the order in which it was saved
@@ -107,19 +113,19 @@ function journalDynamoDBStoreTest() {
       const lastEvent = events[0]; // last one is the first one in reversed order
 
       journalStore
-        .saveEvents(events)
+        .saveBatch(events)
         .then(() => {
           return journalStore.rollforwardTo(aggregateId, startSequence + rollForwadSize);
         })
         .then(() => {
-          return journalStore.getEvents(aggregateId, startSequence, endSequence);
+          return journalStore.getRange(aggregateId, startSequence, endSequence);
         })
         .then((events) => {
           // the number of events should match the events stored in step 1 minus those rolled forward
           events.should.exist;
           events.should.be.length(sampleSize - rollForwadSize - 1);
 
-          return journalStore.getLastEvent(aggregateId);
+          return journalStore.getLast(aggregateId);
         })
         .then((event) => {
           // the last event should match, despite the order in which it was saved

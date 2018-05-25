@@ -2,6 +2,14 @@ import { Snapshot } from "../model/Snapshot";
 
 export interface SnapshotStore {
   /**
+   * Get a snapshot.
+   *
+   * @param aggregateId Aggregate ID
+   * @param sequence Sequence
+   */
+  get(aggregateId: string, sequence: number): Promise<Snapshot>;
+
+  /**
    * Get current snapshot.
    *
    * This action is executed asynchronously, returning a promise with a {@link Snapshot}. If there was a failure

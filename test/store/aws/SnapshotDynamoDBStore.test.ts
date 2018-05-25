@@ -75,6 +75,12 @@ function snapshotDynamoDBStoreTest() {
         .then((latestSnapshot) => {
           latestSnapshot.should.exist;
           latestSnapshot.should.be.eql(snapshots[sampleSize - 1]);
+
+          return snapshotStore.get(aggregateId, endSequence);
+        })
+        .then((snapshot) => {
+          snapshot.should.exist;
+          snapshot.should.be.eql(snapshots[sampleSize - 1]);
         })
         .then(done)
         .catch(done);

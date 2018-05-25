@@ -60,4 +60,52 @@ export class TestDataGenerator {
     }
     return snapshots;
   }
+
+  public static randomGetJournalLambdaEvent(aggregateId?: string) {
+    return {
+      pathParameters: {
+        aggregateId: aggregateId || this.randomAggregateId()
+      }
+    };
+  }
+
+  public static randomGetEventLambdaEvent(aggregateId?: string, sequence?: number) {
+    return {
+      pathParameters: {
+        aggregateId: aggregateId || this.randomAggregateId(),
+        sequence: sequence || this.randomSequence()
+      }
+    };
+  }
+
+  public static randomGetSnapshotLambdaEvent(aggregateId?: string, sequence?: number) {
+    return {
+      pathParameters: {
+        aggregateId: aggregateId || this.randomAggregateId(),
+        sequence: sequence || this.randomSequence()
+      }
+    };
+  }
+
+  public static randomSaveSnapshotLambdaEvent(aggregateId?: string, sequence?: number) {
+    return {
+      pathParameters: {
+        aggregateId: aggregateId || this.randomAggregateId(),
+        sequence: sequence || this.randomSequence()
+      },
+      body: JSON.stringify({ payload: this.randomPayload() })
+    };
+  }
+
+  public static randomSaveEventsLambdaEvent(size: number, aggregateId?: string, fromSequence?: number) {
+    let seedSequence = fromSequence || 0;
+    const events: Event[] = [];
+    for (let i = 0; i < size; i++, seedSequence++) {
+      events.push(this.randomEvent(aggregateId, seedSequence));
+    }
+
+    return {
+      body: JSON.stringify({ events })
+    };
+  }
 }

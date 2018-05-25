@@ -2,7 +2,7 @@ Resources:
   JournalsDynamoDbTable:
     Type: AWS::DynamoDB::Table
     Properties:
-      TableName: ${self:provider.environment.JOURNALS_TABLE}
+      TableName: ${self:custom.aws.dynamodb.journals.tableName}
       AttributeDefinitions:
         - AttributeName: aggregateId
           AttributeType: S
@@ -20,7 +20,7 @@ Resources:
   SnapshotsDynamoDbTable:
     Type: AWS::DynamoDB::Table
     Properties:
-      TableName: ${self:provider.environment.SNAPSHOTS_TABLE}
+      TableName: ${self:custom.aws.dynamodb.snapshots.tableName}
       AttributeDefinitions:
         - AttributeName: aggregateId
           AttributeType: S

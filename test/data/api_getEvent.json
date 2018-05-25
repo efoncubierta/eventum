@@ -1,0 +1,6 @@
+{
+  "pathParameters": {
+    "aggregateId": "1234",
+    "sequence": 1
+  }
+}

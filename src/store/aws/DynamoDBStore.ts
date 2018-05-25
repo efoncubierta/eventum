@@ -34,7 +34,7 @@ export abstract class DynamoDBStore {
             // retry?
             if (operation.retry(error)) {
               // update list of unprocessed items
-              unprocessedItems = result.UnprocessedItems || requestItems;
+              unprocessedItems = result ? result.UnprocessedItems || requestItems : requestItems;
               return;
             }
 

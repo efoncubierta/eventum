@@ -6,15 +6,31 @@ frameworkVersion: ">=1.0.0 <2.0.0"
 plugins:
   - serverless-webpack
 
+custom:
+  aws:
+    dynamodb:
+      journals:
+        tableName: ${self:service.name}-journals-${self:provider.stage}
+      snapshots:
+        tableName: ${self:service.name}-snapshots-${self:provider.stage}
+    kinesis:
+      events:
+        streamName: ${self:service.name}-events-${self:provider.stage}
+    s3:
+      prefix: ezequiel
+      events:
+        bucketName: ${self:custom.aws.s3.prefix}-${self:service.name}-events-${self:provider.stage}
+
 provider:
   name: aws
   runtime: nodejs8.10
   stage: dev
   region: eu-west-1
   environment:
-    JOURNALS_TABLE: Journals_${self:provider.stage}
-    SNAPSHOTS_TABLE: Snapshots_${self:provider.stage}
-    EVENTS_STREAM: Events_${self:provider.stage}
+    JOURNALS_TABLE: ${self:custom.aws.dynamodb.journals.tableName}
+    SNAPSHOTS_TABLE: ${self:custom.aws.dynamodb.snapshots.tableName}
+    EVENTS_STREAM: ${self:custom.aws.kinesis.events.streamName}
+    EVENTS_BUCKET: ${self:custom.aws.s3.events.bucketName}
   iamRoleStatements:
     - Effect: Allow
       Action:
@@ -26,13 +42,22 @@ provider:
         - dynamodb:DeleteItem
         - dynamodb:BatchWriteItem
       Resource: "arn:aws:dynamodb:*"
+    # - Effect: "Allow"
+    #   Action:
+    #     - "kinesis:PutRecord"
+    #     - "kinesis:PutRecords"
+    #   Resource:
+    #     Fn::GetAtt:
+    #       - ${self:custom.aws.kinesis.events.streamName}
+    #       - Arn
 
 package:
   individually: true
 
 functions:
-  - ${file(serverless/functions.yml)}
+  - ${file(serverless/api-functions.yml)}
 
 resources:
   - ${file(serverless/dynamodb.yml)}
-  - ${file(serverless/kinesis.yml)}
+  - ${file(serverless/s3.yml)}
+  # - ${file(serverless/kinesis.yml)}

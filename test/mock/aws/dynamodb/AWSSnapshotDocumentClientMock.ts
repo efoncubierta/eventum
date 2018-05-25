@@ -2,14 +2,19 @@ import { AWSDocumentClientMock } from "./AWSDocumentClientMock";
 import { InMemorySnapshotStore } from "../../InMemorySnapshotStore";
 
 export class AWSSnapshotDocumentClientMock implements AWSDocumentClientMock {
-  public static TABLE_NAME = "SNAPSHOTS";
+  public static TABLE_NAME = "eventum-snapshot-test";
 
   public canHandleGet(params: any): boolean {
     return params.TableName === AWSSnapshotDocumentClientMock.TABLE_NAME;
   }
 
   public handleGet(params: any, callback: (error?: Error, response?: any) => void): void {
-    throw new Error("Method not implemented.");
+    // SnapshotDynamoDBStore.get()
+    const aggregateId: string = params.Key.aggregateId;
+    const sequence: number = params.Key.sequence;
+    callback(null, {
+      Item: InMemorySnapshotStore.getSnapshot(aggregateId, sequence)
+    });
   }
 
   public canHandlePut(params: any): boolean {

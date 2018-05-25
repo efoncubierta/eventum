@@ -2,5 +2,35 @@ Resources:
   EventsStream:
     Type: AWS::Kinesis::Stream
     Properties:
-      Name: ${self:provider.environment.EVENTS_STREAM}
-      ShardCount: 5
+      Name: ${self:custom.aws.kinesis.events.streamName}
+      ShardCount: 1
+
+  # EventsDeliveryStream:
+  #   Type: AWS::KinesisFirehose::DeliveryStream
+  #   Properties:
+  #     DeliveryStreamName: ${self:provider.environment.EVENTS_DELIVERY_STREAM}
+  #     DeliveryStreamType: KinesisStreamAsSource
+  #     ExtendedS3DestinationConfiguration: 
+  #       BucketARN:
+  #         - Fn::GetAtt:
+  #         - ${self:provider.environment.EVENTS_BUCKET}
+  #         - Arn
+  #       RoleARN:
+  #         - Fn::GetAtt:
+  #         - ${self:provider.environment.EVENTS_BUCKET}
+  #         - Arn
+
+  # DeliveryStreamRole:
+  #   Type: AWS::IAM::Role
+  #   Properties:
+  #     AssumeRolePolicyDocument:
+  #       Version: 2012-10-17
+  #       Statement:
+  #         - Sid: ''
+  #           Effect: Allow
+  #           Principal:
+  #             Service: firehose.amazonaws.com
+  #           Action: 'sts:AssumeRole'
+  #           Condition:
+  #             StringEquals:
+  #               'sts:ExternalId': !Ref 'AWS::AccountId'

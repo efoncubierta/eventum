@@ -1,18 +1,12 @@
 import { Schema, Validator, ValidatorResult } from "jsonschema";
-import { AggregateIdSchema, SequenceSchema, EventSchema, SnapshotSchema } from "./schema/ModelSchema";
-import {
-  JournalSaveEventsRequestSchema,
-  JournalGetJournalRequestSchema,
-  JournalCreateSnapshotRequestSchema
-} from "./schema/LambdaJournalSchema";
-import {
-  JournalSaveEventsRequest,
-  JournalCreateSnapshotRequest,
-  JournalGetJournalRequest
-} from "../message/LambdaJournal";
-import { EventStreamPublishRequest } from "../message/LambdaEventStream";
-import { EventStreamPublishRequestSchema } from "./schema/LambdaEventStreamSchema";
 
+// model schemas
+import { AggregateIdSchema, SequenceSchema, EventSchema, SnapshotSchema } from "./schema/ModelSchema";
+
+// REST API schemas
+import { APISaveEventsRequest, APISaveSnapshotRequest } from "../message/APIMessages";
+
+// Eventum configuration schemas
 import {
   EventumConfigSchema,
   EventumConfigProviderSchema,
@@ -26,16 +20,42 @@ import {
 } from "./schema/EventumConfigSchema";
 import { EventumConfig } from "../config/EventumConfig";
 
+// REST API schema
+import {
+  APIGetEventLambdaRequestSchema,
+  APIGetJournalLambdaRequestSchema,
+  APIGetSnapshotLambdaRequestSchema,
+  APISaveSnapshotLambdaRequestSchema,
+  APISaveSnapshotBodyRequestSchema,
+  APISaveEventsLambdaRequestSchema,
+  APISaveEventsBodyRequestSchema
+} from "./schema/APISchema";
+import { AWSLambdaEventBodySchema } from "./schema/AWSLambdaSchema";
+
 /**
  * Validator for JSON schemas.
  */
 export class SchemaValidator {
-  public static getLambdaValidator(): Validator {
+  public static getModelValidator(): Validator {
     const validator = new Validator();
     validator.addSchema(AggregateIdSchema, AggregateIdSchema.id);
     validator.addSchema(SequenceSchema, SequenceSchema.id);
     validator.addSchema(EventSchema, EventSchema.id);
     validator.addSchema(SnapshotSchema, SnapshotSchema.id);
+
+    return validator;
+  }
+
+  public static getAPIValidator(): Validator {
+    const validator = this.getModelValidator();
+    validator.addSchema(AWSLambdaEventBodySchema, AWSLambdaEventBodySchema.id);
+    validator.addSchema(APIGetEventLambdaRequestSchema, APIGetEventLambdaRequestSchema.id);
+    validator.addSchema(APIGetJournalLambdaRequestSchema, APIGetJournalLambdaRequestSchema.id);
+    validator.addSchema(APIGetSnapshotLambdaRequestSchema, APIGetSnapshotLambdaRequestSchema.id);
+    validator.addSchema(APISaveSnapshotLambdaRequestSchema, APISaveSnapshotLambdaRequestSchema.id);
+    validator.addSchema(APISaveSnapshotBodyRequestSchema, APISaveSnapshotBodyRequestSchema.id);
+    validator.addSchema(APISaveEventsLambdaRequestSchema, APISaveEventsLambdaRequestSchema.id);
+    validator.addSchema(APISaveEventsBodyRequestSchema, APISaveEventsBodyRequestSchema.id);
 
     return validator;
   }
@@ -60,23 +80,38 @@ export class SchemaValidator {
     return validator.validate(config, EventumConfigSchema);
   }
 
-  public static validateJournalSaveEventsRequest(request: JournalSaveEventsRequest): ValidatorResult {
-    const validator = this.getLambdaValidator();
-    return validator.validate(request, JournalSaveEventsRequestSchema);
+  public static validateAPIGetEventLambdaRequest(request: any): ValidatorResult {
+    const validator = this.getAPIValidator();
+    return validator.validate(request, APIGetEventLambdaRequestSchema);
   }
 
-  public static validateJournalGetJournalRequest(request: JournalGetJournalRequest): ValidatorResult {
-    const validator = this.getLambdaValidator();
-    return validator.validate(request, JournalGetJournalRequestSchema);
+  public static validateAPIGetJournalLambdaRequest(request: any): ValidatorResult {
+    const validator = this.getAPIValidator();
+    return validator.validate(request, APIGetJournalLambdaRequestSchema);
   }
 
-  public static validateJournalCreateSnapshotRequest(request: JournalCreateSnapshotRequest): ValidatorResult {
-    const validator = this.getLambdaValidator();
-    return validator.validate(request, JournalCreateSnapshotRequestSchema);
+  public static validateAPIGetSnapshotLambdaRequest(request: any): ValidatorResult {
+    const validator = this.getAPIValidator();
+    return validator.validate(request, APIGetSnapshotLambdaRequestSchema);
   }
 
-  public static validateEventStreamPublishRequest(request: EventStreamPublishRequest): ValidatorResult {
-    const validator = this.getLambdaValidator();
-    return validator.validate(request, EventStreamPublishRequestSchema);
+  public static validateAPISaveEventsLambdaRequest(request: any): ValidatorResult {
+    const validator = this.getAPIValidator();
+    return validator.validate(request, APISaveEventsLambdaRequestSchema);
+  }
+
+  public static validateAPISaveEventsBodyRequest(request: APISaveEventsRequest): ValidatorResult {
+    const validator = this.getAPIValidator();
+    return validator.validate(request, APISaveEventsBodyRequestSchema);
+  }
+
+  public static validateAPISaveSnapshotLambdaRequest(request: any): ValidatorResult {
+    const validator = this.getAPIValidator();
+    return validator.validate(request, APISaveSnapshotLambdaRequestSchema);
+  }
+
+  public static validateAPISaveSnapshotBodyRequest(request: APISaveSnapshotRequest): ValidatorResult {
+    const validator = this.getAPIValidator();
+    return validator.validate(request, APISaveSnapshotBodyRequestSchema);
   }
 }

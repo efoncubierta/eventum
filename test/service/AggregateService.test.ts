@@ -3,13 +3,12 @@ import * as chai from "chai";
 import * as chaiAsPromised from "chai-as-promised";
 import "mocha";
 
-import { JournalService } from "../../src/service/JournalService";
+import { AggregateService } from "../../src/service/AggregateService";
 import { TestDataGenerator } from "../util/TestDataGenerator";
-import { Eventum } from "../../src/Eventum";
 import { AWSMock } from "../mock/aws";
 
-function journalServiceTest() {
-  describe("JournalService", () => {
+function aggregateServiceTest() {
+  describe("AggregateService", () => {
     before(() => {
       // setup chai
       chai.should();
@@ -31,9 +30,15 @@ function journalServiceTest() {
       const startSequence = TestDataGenerator.randomSequence();
       const events = TestDataGenerator.randomEvents(sampleSize, aggregateId, startSequence);
 
-      JournalService.saveEvents(events)
+      AggregateService.saveEvents(events)
         .then(() => {
-          return JournalService.getJournal(aggregateId);
+          return AggregateService.getEvent(aggregateId, startSequence);
+        })
+        .then((event) => {
+          event.should.exist;
+          event.should.eql(events[0]);
+
+          return AggregateService.getJournal(aggregateId);
         })
         .then((journal) => {
           journal.should.exist;
@@ -44,7 +49,7 @@ function journalServiceTest() {
         .catch(done);
     });
 
-    it("should take and snapshot and purge older ones", (done) => {
+    it("should take a snapshot and get a valid journal", (done) => {
       // const retentionCount = Eventum.config().snapshot.retention.count;
       const sampleSize = 100;
       const aggregateId = TestDataGenerator.randomAggregateId();
@@ -53,12 +58,20 @@ function journalServiceTest() {
       const events = TestDataGenerator.randomEvents(sampleSize, aggregateId, startSequence);
       const payload = TestDataGenerator.randomPayload();
 
-      JournalService.saveEvents(events)
+      AggregateService.saveEvents(events)
         .then(() => {
-          return JournalService.createSnapshot(aggregateId, snapshotSequence, payload);
+          return AggregateService.saveSnapshot(aggregateId, snapshotSequence, payload);
         })
         .then(() => {
-          return JournalService.getJournal(aggregateId);
+          return AggregateService.getSnapshot(aggregateId, snapshotSequence);
+        })
+        .then((snapshot) => {
+          snapshot.should.exist;
+          snapshot.aggregateId.should.equal(aggregateId);
+          snapshot.sequence.should.equal(snapshotSequence);
+          snapshot.payload.should.eql(payload);
+
+          return AggregateService.getJournal(aggregateId);
         })
         .then((journal) => {
           journal.should.exist;
@@ -74,4 +87,4 @@ function journalServiceTest() {
   });
 }
 
-export default journalServiceTest;
+export default aggregateServiceTest;

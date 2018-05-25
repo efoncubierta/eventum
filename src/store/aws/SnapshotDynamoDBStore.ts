@@ -18,6 +18,29 @@ export class SnapshotDynamoDBStore extends DynamoDBStore implements SnapshotStor
     this.snapshotConfig = Eventum.config().snapshot;
   }
 
+  public get(aggregateId: string, sequence: number): Promise<Snapshot> {
+    const documentClient = new DynamoDB.DocumentClient();
+
+    return new Promise((resolve, reject) => {
+      documentClient.get(
+        {
+          TableName: this.snapshotStoreConfig.tableName,
+          Key: {
+            aggregateId,
+            sequence
+          }
+        },
+        (error, result) => {
+          if (error) {
+            reject(error);
+          } else {
+            resolve(result.Item as Snapshot);
+          }
+        }
+      );
+    });
+  }
+
   public getLatest(aggregateId: string): Promise<Snapshot> {
     const documentClient = new DynamoDB.DocumentClient();
 
