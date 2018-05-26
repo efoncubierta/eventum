@@ -1,42 +1,17 @@
-api_aggregates_journal_get:
-  handler: src/lambda/api/aggregates/journal/get.handler
-  events:
-    - http:
-        path: api/aggregates/{aggregateId}/journal
-        method: get
-        cors: true
+api_getJournal:
+  handler: src/lambda/api/getJournal.handler
 
-api_aggregates_snapshots_get:
-  handler: src/lambda/api/aggregates/snapshots/get.handler
-  events:
-    - http:
-        path: api/aggregates/{aggregateId}/snapshots/{sequence}
-        method: get
-        cors: true
+api_getSnapshot:
+  handler: src/lambda/api/getSnapshot.handler
 
-api_aggregates_snapshots_post:
-  handler: src/lambda/api/aggregates/snapshots/post.handler
-  events:
-    - http:
-        path: api/aggregates/{aggregateId}/snapshots
-        method: post
-        cors: true
+api_saveSnapshot:
+  handler: src/lambda/api/saveSnapshot.handler
 
-api_aggregates_events_get:
-  handler: src/lambda/api/aggregates/events/get.handler
-  events:
-    - http:
-        path: api/aggregates/{aggregateId}/events/{sequence}
-        method: get
-        cors: true
+api_getEvent:
+  handler: src/lambda/api/getEvent.handler
 
-api_events_post:
-  handler: src/lambda/api/events/post.handler
-  events:
-    - http:
-        path: api/events
-        method: post
-        cors: true
+api_saveEvents:
+  handler: src/lambda/api/saveEvents.handler
   # events:
   #   - stream:
   #     type: kinesis
@@ -46,10 +21,5 @@ api_events_post:
   #         - Arn
   #     batchSize: 50
 
-api_replay_post:
-  handler: src/lambda/api/replay/post.handler
-  events:
-    - http:
-        path: api/replay
-        method: post
-        cors: true
+api_replay:
+  handler: src/lambda/api/replay.handler

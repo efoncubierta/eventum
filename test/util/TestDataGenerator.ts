@@ -1,6 +1,13 @@
 import * as faker from "faker";
 import { Event } from "../../src/model/Event";
 import { Snapshot } from "../../src/model/Snapshot";
+import {
+  LambdaGetJournalRequest,
+  LambdaGetEventRequest,
+  LambdaGetSnapshotRequest,
+  LambdaSaveSnapshotRequest,
+  LambdaSaveEventsRequest
+} from "../../src/message/LambdaMessages";
 
 export class TestDataGenerator {
   public static randomEventType(): string {
@@ -61,43 +68,39 @@ export class TestDataGenerator {
     return snapshots;
   }
 
-  public static randomGetJournalLambdaEvent(aggregateId?: string) {
+  public static randomLambdaGetJournalRequest(aggregateId?: string): LambdaGetJournalRequest {
     return {
-      pathParameters: {
-        aggregateId: aggregateId || this.randomAggregateId()
-      }
+      aggregateId: aggregateId || this.randomAggregateId()
     };
   }
 
-  public static randomGetEventLambdaEvent(aggregateId?: string, sequence?: number) {
+  public static randomLambdaGetEventRequest(aggregateId?: string, sequence?: number): LambdaGetEventRequest {
     return {
-      pathParameters: {
-        aggregateId: aggregateId || this.randomAggregateId(),
-        sequence: sequence || this.randomSequence()
-      }
+      aggregateId: aggregateId || this.randomAggregateId(),
+      sequence: sequence || this.randomSequence()
     };
   }
 
-  public static randomGetSnapshotLambdaEvent(aggregateId?: string, sequence?: number) {
+  public static randomLambdaGetSnapshotRequest(aggregateId?: string, sequence?: number): LambdaGetSnapshotRequest {
     return {
-      pathParameters: {
-        aggregateId: aggregateId || this.randomAggregateId(),
-        sequence: sequence || this.randomSequence()
-      }
+      aggregateId: aggregateId || this.randomAggregateId(),
+      sequence: sequence || this.randomSequence()
     };
   }
 
-  public static randomSaveSnapshotLambdaEvent(aggregateId?: string, sequence?: number) {
+  public static randomLambdaSaveSnapshotRequest(aggregateId?: string, sequence?: number): LambdaSaveSnapshotRequest {
     return {
-      pathParameters: {
-        aggregateId: aggregateId || this.randomAggregateId(),
-        sequence: sequence || this.randomSequence()
-      },
-      body: JSON.stringify({ payload: this.randomPayload() })
+      aggregateId: aggregateId || this.randomAggregateId(),
+      sequence: sequence || this.randomSequence(),
+      payload: this.randomPayload()
     };
   }
 
-  public static randomSaveEventsLambdaEvent(size: number, aggregateId?: string, fromSequence?: number) {
+  public static randomLambdaSaveEventsRequest(
+    size: number,
+    aggregateId?: string,
+    fromSequence?: number
+  ): LambdaSaveEventsRequest {
     let seedSequence = fromSequence || 0;
     const events: Event[] = [];
     for (let i = 0; i < size; i++, seedSequence++) {
@@ -105,7 +108,7 @@ export class TestDataGenerator {
     }
 
     return {
-      body: JSON.stringify({ events })
+      events
     };
   }
 }
