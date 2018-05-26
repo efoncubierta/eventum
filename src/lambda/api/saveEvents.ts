@@ -18,7 +18,7 @@ export const handler: Handler = (request: LambdaSaveEventsRequest, context: Cont
 
   AggregateService.saveEvents(request.events)
     .then(() => {
-      HandleLambdaResponse.success(callback);
+      HandleLambdaResponse.success(callback, {});
     })
     .catch((err) => {
       HandleLambdaResponse.unknown(callback, err.message);

@@ -16,7 +16,7 @@ export const handler: Handler = (request: LambdaSaveSnapshotRequest, context: Co
 
   AggregateService.saveSnapshot(request.aggregateId, request.sequence, request.payload)
     .then(() => {
-      HandleLambdaResponse.success(callback);
+      HandleLambdaResponse.success(callback, {});
     })
     .catch((err) => {
       HandleLambdaResponse.unknown(callback, err.message);
