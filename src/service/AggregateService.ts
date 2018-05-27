@@ -20,7 +20,7 @@ export class AggregateService {
    * @param sequence Sequence
    */
   public static getEvent(aggregateId: string, sequence: number): Promise<Event> {
-    return StoreFactory.getJournalStore().get(aggregateId, sequence);
+    return StoreFactory.getEventStore().get(aggregateId, sequence);
   }
 
   /**
@@ -44,11 +44,14 @@ export class AggregateService {
 
         // fetch latest events
         const fromSequence = snapshot ? snapshot.sequence + 1 : 0;
-        return StoreFactory.getJournalStore().getRange(aggregateId, fromSequence);
+        return StoreFactory.getEventStore().getRange(aggregateId, fromSequence);
       })
       .then((events) => {
         // update journal builder with the events and build the journal
-        return journalBuilder.events(events).build();
+        const journal = journalBuilder.events(events).build();
+
+        // only return the journal if there is at least one snapshot or one event
+        return journal.snapshot || journal.events.length ? journal : null;
       });
   }
 
@@ -75,7 +78,7 @@ export class AggregateService {
    * @param payload Payload
    */
   public static saveSnapshot(aggregateId: string, sequence: number, payload: {}): Promise<void> {
-    return StoreFactory.getJournalStore()
+    return StoreFactory.getEventStore()
       .get(aggregateId, sequence)
       .then((event) => {
         // event must exist to create the snapshot
@@ -113,7 +116,7 @@ export class AggregateService {
   public static saveEvents(events: Event[]): Promise<void> {
     // TODO validate events
 
-    return StoreFactory.getJournalStore()
+    return StoreFactory.getEventStore()
       .saveBatch(events)
       .then((response) => {
         // TODO handle response

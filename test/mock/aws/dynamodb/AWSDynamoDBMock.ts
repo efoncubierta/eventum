@@ -1,14 +1,14 @@
 import * as AWS from "aws-sdk-mock";
 import { Eventum } from "../../../../src/Eventum";
 import { AWSDocumentClientMock } from "./AWSDocumentClientMock";
-import { AWSJournalDocumentClientMock } from "./AWSJournalDocumentClientMock";
+import { AWSEventDocumentClientMock } from "./AWSEventDocumentClientMock";
 import { AWSSnapshotDocumentClientMock } from "./AWSSnapshotDocumentClientMock";
 
 /**
  * Mock AWS DynamoDB API.
  */
 export class AWSDynamoDBMock {
-  private static journalDocumentClientMock: AWSDocumentClientMock = new AWSJournalDocumentClientMock();
+  private static eventDocumentClientMock: AWSDocumentClientMock = new AWSEventDocumentClientMock();
   private static snapshotDocumentClientMock: AWSDocumentClientMock = new AWSSnapshotDocumentClientMock();
 
   /**
@@ -18,8 +18,8 @@ export class AWSDynamoDBMock {
    * @param callback Callback
    */
   private static documentClientGetMock(params, callback): void {
-    if (AWSDynamoDBMock.journalDocumentClientMock.canHandleGet(params)) {
-      AWSDynamoDBMock.journalDocumentClientMock.handleGet(params, callback);
+    if (AWSDynamoDBMock.eventDocumentClientMock.canHandleGet(params)) {
+      AWSDynamoDBMock.eventDocumentClientMock.handleGet(params, callback);
     } else if (AWSDynamoDBMock.snapshotDocumentClientMock.canHandleGet(params)) {
       AWSDynamoDBMock.snapshotDocumentClientMock.handleGet(params, callback);
     } else {
@@ -34,8 +34,8 @@ export class AWSDynamoDBMock {
    * @param callback Callback
    */
   private static documentClientPutMock(params, callback): void {
-    if (AWSDynamoDBMock.journalDocumentClientMock.canHandlePut(params)) {
-      AWSDynamoDBMock.journalDocumentClientMock.handlePut(params, callback);
+    if (AWSDynamoDBMock.eventDocumentClientMock.canHandlePut(params)) {
+      AWSDynamoDBMock.eventDocumentClientMock.handlePut(params, callback);
     } else if (AWSDynamoDBMock.snapshotDocumentClientMock.canHandlePut(params)) {
       AWSDynamoDBMock.snapshotDocumentClientMock.handlePut(params, callback);
     } else {
@@ -50,8 +50,8 @@ export class AWSDynamoDBMock {
    * @param callback Callback
    */
   private static documentClientQueryMock(params, callback): void {
-    if (AWSDynamoDBMock.journalDocumentClientMock.canHandleQuery(params)) {
-      AWSDynamoDBMock.journalDocumentClientMock.handleQuery(params, callback);
+    if (AWSDynamoDBMock.eventDocumentClientMock.canHandleQuery(params)) {
+      AWSDynamoDBMock.eventDocumentClientMock.handleQuery(params, callback);
     } else if (AWSDynamoDBMock.snapshotDocumentClientMock.canHandleQuery(params)) {
       AWSDynamoDBMock.snapshotDocumentClientMock.handleQuery(params, callback);
     } else {
@@ -66,8 +66,8 @@ export class AWSDynamoDBMock {
    * @param callback Callback
    */
   private static documentClientScanMock(params, callback): void {
-    if (AWSDynamoDBMock.journalDocumentClientMock.canHandleScan(params)) {
-      AWSDynamoDBMock.journalDocumentClientMock.handleScan(params, callback);
+    if (AWSDynamoDBMock.eventDocumentClientMock.canHandleScan(params)) {
+      AWSDynamoDBMock.eventDocumentClientMock.handleScan(params, callback);
     } else if (AWSDynamoDBMock.snapshotDocumentClientMock.canHandleScan(params)) {
       AWSDynamoDBMock.snapshotDocumentClientMock.handleScan(params, callback);
     } else {
@@ -82,8 +82,8 @@ export class AWSDynamoDBMock {
    * @param callback Callback
    */
   private static documentClientBatchWriteMock(params, callback): void {
-    if (AWSDynamoDBMock.journalDocumentClientMock.canHandleBatchWrite(params)) {
-      AWSDynamoDBMock.journalDocumentClientMock.handleBatchWrite(params, callback);
+    if (AWSDynamoDBMock.eventDocumentClientMock.canHandleBatchWrite(params)) {
+      AWSDynamoDBMock.eventDocumentClientMock.handleBatchWrite(params, callback);
     } else if (AWSDynamoDBMock.snapshotDocumentClientMock.canHandleBatchWrite(params)) {
       AWSDynamoDBMock.snapshotDocumentClientMock.handleBatchWrite(params, callback);
     } else {
@@ -104,8 +104,8 @@ export class AWSDynamoDBMock {
     Eventum.config({
       aws: {
         store: {
-          journal: {
-            tableName: AWSJournalDocumentClientMock.TABLE_NAME
+          event: {
+            tableName: AWSEventDocumentClientMock.TABLE_NAME
           },
           snapshot: {
             tableName: AWSSnapshotDocumentClientMock.TABLE_NAME

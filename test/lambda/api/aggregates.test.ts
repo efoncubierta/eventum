@@ -25,7 +25,7 @@ const saveSnapshotHandlerP = promisify(saveSnapshotHandler);
 const saveEventsHandlerP = promisify(saveEventsHandler);
 
 function aggregatesAPITest() {
-  describe("api/aggregates/*", () => {
+  describe("api/*", () => {
     before(() => {
       // setup chai
       chai.should();
@@ -38,6 +38,78 @@ function aggregatesAPITest() {
     after(() => {
       // restore AWS mock
       AWSMock.restoreMock();
+    });
+
+    it("should respond 'BadRequest' for random requests", (done) => {
+      const randomRequest = TestDataGenerator.randomPayload();
+
+      getEventHandlerP(randomRequest, null)
+        .then((response) => {
+          response.should.exist;
+          response.$type.should.exist;
+          response.$type.should.equal("BadRequest");
+
+          return getJournalHandlerP(randomRequest, null);
+        })
+        .then((response) => {
+          response.should.exist;
+          response.$type.should.exist;
+          response.$type.should.equal("BadRequest");
+
+          return getSnapshotHandlerP(randomRequest, null);
+        })
+        .then((response) => {
+          response.should.exist;
+          response.$type.should.exist;
+          response.$type.should.equal("BadRequest");
+
+          return saveSnapshotHandlerP(randomRequest, null);
+        })
+        .then((response) => {
+          response.should.exist;
+          response.$type.should.exist;
+          response.$type.should.equal("BadRequest");
+
+          return saveEventsHandlerP(randomRequest, null);
+        })
+        .then((response) => {
+          response.should.exist;
+          response.$type.should.exist;
+          response.$type.should.equal("BadRequest");
+        })
+        .then(done)
+        .catch(done);
+    });
+
+    it("should respond 'NotFound' for missing aggregates", (done) => {
+      const aggregateId = TestDataGenerator.randomAggregateId();
+      const sequence = TestDataGenerator.randomSequence();
+      const getEventRequest = TestDataGenerator.randomLambdaGetEventRequest(aggregateId, sequence);
+      const getJournalRequest = TestDataGenerator.randomLambdaGetJournalRequest(aggregateId);
+      const getSnapshotRequest = TestDataGenerator.randomLambdaGetSnapshotRequest(aggregateId, sequence);
+
+      getEventHandlerP(getEventRequest, null)
+        .then((response) => {
+          response.should.exist;
+          response.$type.should.exist;
+          response.$type.should.equal("NotFound");
+
+          return getJournalHandlerP(getJournalRequest, null);
+        })
+        .then((response) => {
+          response.should.exist;
+          response.$type.should.exist;
+          response.$type.should.equal("NotFound");
+
+          return getSnapshotHandlerP(getSnapshotRequest, null);
+        })
+        .then((response) => {
+          response.should.exist;
+          response.$type.should.exist;
+          response.$type.should.equal("NotFound");
+        })
+        .then(done)
+        .catch(done);
     });
 
     it("should save a sequence of events", (done) => {

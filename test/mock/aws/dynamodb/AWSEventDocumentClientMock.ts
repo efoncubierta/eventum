@@ -1,11 +1,11 @@
 import { AWSDocumentClientMock } from "./AWSDocumentClientMock";
-import { InMemoryJournalStore } from "../../InMemoryJournalStore";
+import { InMemoryEventStore } from "../../InMemoryEventStore";
 
-export class AWSJournalDocumentClientMock implements AWSDocumentClientMock {
-  public static TABLE_NAME = "eventum-journals-test";
+export class AWSEventDocumentClientMock implements AWSDocumentClientMock {
+  public static TABLE_NAME = "eventum-events-test";
 
   public canHandleGet(params: any): boolean {
-    return params.TableName === AWSJournalDocumentClientMock.TABLE_NAME;
+    return params.TableName === AWSEventDocumentClientMock.TABLE_NAME;
   }
 
   public handleGet(params: any, callback: (error?: Error, response?: any) => void): void {
@@ -13,7 +13,7 @@ export class AWSJournalDocumentClientMock implements AWSDocumentClientMock {
     const aggregateId: string = params.Key.aggregateId;
     const sequence: number = params.Key.sequence;
     callback(null, {
-      Item: InMemoryJournalStore.getEvent(aggregateId, sequence)
+      Item: InMemoryEventStore.getEvent(aggregateId, sequence)
     });
   }
 
@@ -26,7 +26,7 @@ export class AWSJournalDocumentClientMock implements AWSDocumentClientMock {
   }
 
   public canHandleQuery(params: any): boolean {
-    return params.TableName === AWSJournalDocumentClientMock.TABLE_NAME;
+    return params.TableName === AWSEventDocumentClientMock.TABLE_NAME;
   }
 
   public handleQuery(params: any, callback: (error?: Error, response?: any) => void): void {
@@ -38,34 +38,34 @@ export class AWSJournalDocumentClientMock implements AWSDocumentClientMock {
       const fromSequence = params.ExpressionAttributeValues[":fromSequence"];
       const toSequence = params.ExpressionAttributeValues[":toSequence"];
       callback(null, {
-        Items: InMemoryJournalStore.getEvents(aggregateId, fromSequence, toSequence)
+        Items: InMemoryEventStore.getEvents(aggregateId, fromSequence, toSequence)
       });
     } else if (params.KeyConditionExpression === "aggregateId = :aggregateId") {
       // JournalDynamoDBStore.getLastEvent()
       const aggregateId = params.ExpressionAttributeValues[":aggregateId"];
       callback(null, {
-        Items: InMemoryJournalStore.getEvents(aggregateId, 0, Number.MAX_SAFE_INTEGER, 1, true)
+        Items: InMemoryEventStore.getEvents(aggregateId, 0, Number.MAX_SAFE_INTEGER, 1, true)
       });
     } else if (params.KeyConditionExpression === "aggregateId = :aggregateId AND #sequence >= :sequence") {
       // JournalDynamoDBStore.rollBackTo()
       const aggregateId = params.ExpressionAttributeValues[":aggregateId"];
       const sequence = params.ExpressionAttributeValues[":sequence"];
       callback(null, {
-        Items: InMemoryJournalStore.getEvents(aggregateId, sequence, Number.MAX_SAFE_INTEGER)
+        Items: InMemoryEventStore.getEvents(aggregateId, sequence, Number.MAX_SAFE_INTEGER)
       });
     } else if (params.KeyConditionExpression === "aggregateId = :aggregateId AND #sequence <= :sequence") {
       // JournalDynamoDBStore.rollForwardTo()
       const aggregateId = params.ExpressionAttributeValues[":aggregateId"];
       const sequence = params.ExpressionAttributeValues[":sequence"];
       callback(null, {
-        Items: InMemoryJournalStore.getEvents(aggregateId, 0, sequence)
+        Items: InMemoryEventStore.getEvents(aggregateId, 0, sequence)
       });
     } else if (params.KeyConditionExpression === "aggregateId = :aggregateId AND #sequence >= :fromSequence") {
       // JournalDynamoDBStore.getLastSequence()
       const aggregateId = params.ExpressionAttributeValues[":aggregateId"];
       const fromSequence = params.ExpressionAttributeValues[":fromSequence"];
       callback(null, {
-        Items: InMemoryJournalStore.getEvents(aggregateId, fromSequence, Number.MAX_SAFE_INTEGER)
+        Items: InMemoryEventStore.getEvents(aggregateId, fromSequence, Number.MAX_SAFE_INTEGER)
       });
     } else {
       callback(new Error(`Unrecognise request pattern to DocumentClient.query() for table ${params.TableName}`));
@@ -81,25 +81,25 @@ export class AWSJournalDocumentClientMock implements AWSDocumentClientMock {
   }
 
   public canHandleBatchWrite(params: any): boolean {
-    return params.RequestItems[AWSJournalDocumentClientMock.TABLE_NAME];
+    return params.RequestItems[AWSEventDocumentClientMock.TABLE_NAME];
   }
 
   public handleBatchWrite(params: any, callback: (error?: Error, response?: any) => void): void {
     const unprocessedItems = {};
-    const requestItems: any[] = params.RequestItems[AWSJournalDocumentClientMock.TABLE_NAME];
+    const requestItems: any[] = params.RequestItems[AWSEventDocumentClientMock.TABLE_NAME];
 
     requestItems.forEach((requestItem) => {
       if (requestItem.PutRequest) {
-        InMemoryJournalStore.putEvent(requestItem.PutRequest.Item);
+        InMemoryEventStore.putEvent(requestItem.PutRequest.Item);
       } else if (requestItem.DeleteRequest) {
-        InMemoryJournalStore.deleteEvent(
+        InMemoryEventStore.deleteEvent(
           requestItem.DeleteRequest.Key.aggregateId,
           requestItem.DeleteRequest.Key.sequence
         );
       } else {
-        unprocessedItems[AWSJournalDocumentClientMock.TABLE_NAME] =
-          unprocessedItems[AWSJournalDocumentClientMock.TABLE_NAME] || [];
-        unprocessedItems[AWSJournalDocumentClientMock.TABLE_NAME].push(requestItem);
+        unprocessedItems[AWSEventDocumentClientMock.TABLE_NAME] =
+          unprocessedItems[AWSEventDocumentClientMock.TABLE_NAME] || [];
+        unprocessedItems[AWSEventDocumentClientMock.TABLE_NAME].push(requestItem);
       }
     });
 

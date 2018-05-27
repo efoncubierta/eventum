@@ -4,12 +4,12 @@ export interface StoreBatchResponse<T> {
   failedItems?: T[];
 }
 
-export type JournalStoreBatchResponse = StoreBatchResponse<Event>;
+export type EventStoreBatchResponse = StoreBatchResponse<Event>;
 
 /**
- * Manage journals in a data store.
+ * Manage events in a data store.
  */
-export interface JournalStore {
+export interface EventStore {
   /**
    * Save a batch of events.
    *
@@ -24,7 +24,7 @@ export interface JournalStore {
    *
    * Events don't need to be validated, that's {@link JournalService}'s job. The store must be as faster as it can be.
    *
-   * This action is executed asynchronously, returning a promise with a {@link JournalStoreBatchResponse}. If there were
+   * This action is executed asynchronously, returning a promise with a {@link EventStoreBatchResponse}. If there were
    * failures saving one of the events, the promise would be rejected. It will only resolve when all the events in the
    * batch have been successfuly saved. Any other general failure will also reject the promise
    * i.e. DB connectivity issues.
@@ -34,7 +34,7 @@ export interface JournalStore {
    *
    * @param events Array of events
    */
-  saveBatch(events: Event[]): Promise<JournalStoreBatchResponse>;
+  saveBatch(events: Event[]): Promise<EventStoreBatchResponse>;
 
   /**
    * Remove a batch of events.
@@ -47,7 +47,7 @@ export interface JournalStore {
    *
    * Events don't need to be validated, that's {@link JournalService}'s job. The store must be as faster as it can be.
    *
-   * This action is executed asynchronously, returning a promise with a {@link JournalStoreBatchResponse}. If there
+   * This action is executed asynchronously, returning a promise with a {@link EventStoreBatchResponse}. If there
    * were failures removing one of the events, the promise would be rejected. It will only resolve when all the events
    * in the batch have been successfully saved. Any other general failure will also reject the promise
    * i.e. DB connectivity issues.
@@ -57,7 +57,7 @@ export interface JournalStore {
    *
    * @param events Events
    */
-  removeBatch(events: Event[]): Promise<JournalStoreBatchResponse>;
+  removeBatch(events: Event[]): Promise<EventStoreBatchResponse>;
 
   /**
    * Roll events back to a certain sequence.

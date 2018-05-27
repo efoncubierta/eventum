@@ -1,28 +1,28 @@
 import { Eventum } from "../Eventum";
 import { EventumProvider } from "../config/EventumConfig";
-import { JournalStore } from "./JournalStore";
+import { EventStore } from "./EventStore";
 import { SnapshotStore } from "./SnapshotStore";
-import { JournalDynamoDBStore } from "./aws/JournalDynamoDBStore";
+import { EventDynamoDBStore } from "./aws/EventDynamoDBStore";
 import { SnapshotDynamoDBStore } from "./aws/SnapshotDynamoDBStore";
 
 /**
- * Create {@link JournalStore} and {@link SnapshotStore} instances for the Eventum provider
+ * Create {@link EventStore} and {@link SnapshotStore} instances for the Eventum provider
  * configured in {@link Eventum.config()}.
  */
 export class StoreFactory {
   /**
-   * Create a {@link JournalStore} instance for the provider configured.
+   * Create a {@link EventStore} instance for the provider configured.
    *
    * If there is no journal store for the provider configured, it will throw an exception.
    *
    * @returns Journal store
    */
-  public static getJournalStore(): JournalStore {
+  public static getEventStore(): EventStore {
     switch (Eventum.config().provider) {
       case EventumProvider.AWS:
-        return new JournalDynamoDBStore();
+        return new EventDynamoDBStore();
       default:
-        throw new Error(`JournalStore not available for ${Eventum.config().provider}`);
+        throw new Error(`EventStore not available for ${Eventum.config().provider}`);
     }
   }
 

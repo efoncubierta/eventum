@@ -1,6 +1,6 @@
 import { DynamoDB } from "aws-sdk";
 import { BatchWriteItemOutput, BatchWriteItemRequestMap } from "aws-sdk/clients/dynamodb";
-import { JournalStore, JournalStoreBatchResponse } from "../JournalStore";
+import { EventStore, EventStoreBatchResponse } from "../EventStore";
 import { DynamoDBStore } from "./DynamoDBStore";
 import { Eventum } from "../../Eventum";
 import { EventumAWSStoreDetails } from "../../config/EventumConfig";
@@ -9,15 +9,15 @@ import { Event } from "../../model/Event";
 /**
  * Manage journals in a DynamoDB table.
  */
-export class JournalDynamoDBStore extends DynamoDBStore implements JournalStore {
+export class EventDynamoDBStore extends DynamoDBStore implements EventStore {
   private journalConfig: EventumAWSStoreDetails;
 
   constructor() {
     super();
-    this.journalConfig = Eventum.config().aws.store.journal;
+    this.journalConfig = Eventum.config().aws.store.event;
   }
 
-  public saveBatch(events: Event[]): Promise<JournalStoreBatchResponse> {
+  public saveBatch(events: Event[]): Promise<EventStoreBatchResponse> {
     if (events.length === 0) {
       return;
     }
@@ -33,11 +33,11 @@ export class JournalDynamoDBStore extends DynamoDBStore implements JournalStore 
     });
 
     return this.retryBatchWrite(requestItems).then((response) => {
-      return this.toJournalStoreBatchResponse(events, response);
+      return this.toEventStoreBatchResponse(events, response);
     });
   }
 
-  public removeBatch(events: Event[]): Promise<JournalStoreBatchResponse> {
+  public removeBatch(events: Event[]): Promise<EventStoreBatchResponse> {
     if (events.length === 0) {
       return;
     }
@@ -53,7 +53,7 @@ export class JournalDynamoDBStore extends DynamoDBStore implements JournalStore 
     });
 
     return this.retryBatchWrite(requestItems).then((response) => {
-      return this.toJournalStoreBatchResponse(events, response);
+      return this.toEventStoreBatchResponse(events, response);
     });
   }
 
@@ -249,10 +249,10 @@ export class JournalDynamoDBStore extends DynamoDBStore implements JournalStore 
     });
   }
 
-  private toJournalStoreBatchResponse(
+  private toEventStoreBatchResponse(
     events: Event[],
     response: BatchWriteItemRequestMap
-  ): Promise<JournalStoreBatchResponse> {
+  ): Promise<EventStoreBatchResponse> {
     if (response && response[this.journalConfig.tableName]) {
       const failedKeys = response[this.journalConfig.tableName].map((request) => {
         if (request.DeleteRequest) {

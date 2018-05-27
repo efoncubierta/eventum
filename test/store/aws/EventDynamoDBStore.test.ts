@@ -3,16 +3,16 @@ import * as chai from "chai";
 import * as chaiAsPromised from "chai-as-promised";
 import "mocha";
 
-import { JournalStore } from "../../../src/store/JournalStore";
-import { JournalDynamoDBStore } from "../../../src/store/aws/JournalDynamoDBStore";
+import { EventStore } from "../../../src/store/EventStore";
+import { EventDynamoDBStore } from "../../../src/store/aws/EventDynamoDBStore";
 import { Event } from "../../../src/model/Event";
 import { TestDataGenerator } from "../../util/TestDataGenerator";
 import { AWSMock } from "../../mock/aws";
 
-let journalStore: JournalStore;
+let eventStore: EventStore;
 
-function journalDynamoDBStoreTest() {
-  describe("JournalDynamoDBStore", () => {
+function eventDynamoDBStoreTest() {
+  describe("EventDynamoDBStore", () => {
     before(() => {
       // setup chai
       chai.should();
@@ -22,7 +22,7 @@ function journalDynamoDBStoreTest() {
       AWSMock.enableMock();
 
       // init journalStore after enabling AWS mock
-      journalStore = new JournalDynamoDBStore();
+      eventStore = new EventDynamoDBStore();
     });
 
     after(() => {
@@ -39,25 +39,25 @@ function journalDynamoDBStoreTest() {
       const events = TestDataGenerator.randomEvents(sampleSize, aggregateId, startSequence).reverse();
       const lastEvent = events[0]; // last one is the first one in reversed order
 
-      journalStore
+      eventStore
         .saveBatch(events)
         .then(() => {
           // get all events just stored for the aggregate
-          return journalStore.getRange(aggregateId, startSequence, endSequence);
+          return eventStore.getRange(aggregateId, startSequence, endSequence);
         })
         .then((events) => {
           // the number of events should match the events stored in step 1
           events.should.exist;
           events.should.be.length(sampleSize);
 
-          return journalStore.getLast(aggregateId);
+          return eventStore.getLast(aggregateId);
         })
         .then((event) => {
           // the last event should match, despite the order in which it was saved
           event.should.exist;
           event.should.eql(lastEvent);
 
-          return journalStore.get(aggregateId, endSequence);
+          return eventStore.get(aggregateId, endSequence);
         })
         .then((event) => {
           event.should.exist;
@@ -77,21 +77,21 @@ function journalDynamoDBStoreTest() {
       const events = TestDataGenerator.randomEvents(sampleSize, aggregateId, startSequence).reverse();
       const lastEvent = events[rollBackSize]; // last one will be in rollBackSize position after roll-back is performed
 
-      journalStore
+      eventStore
         .saveBatch(events)
         .then(() => {
           // +1 or it'll delete 21 items
-          return journalStore.rollbackTo(aggregateId, endSequence - rollBackSize + 1);
+          return eventStore.rollbackTo(aggregateId, endSequence - rollBackSize + 1);
         })
         .then(() => {
-          return journalStore.getRange(aggregateId, startSequence, endSequence);
+          return eventStore.getRange(aggregateId, startSequence, endSequence);
         })
         .then((events) => {
           // the number of events should match the events stored in step 1 minus those rolled back
           events.should.exist;
           events.should.be.length(sampleSize - rollBackSize);
 
-          return journalStore.getLast(aggregateId);
+          return eventStore.getLast(aggregateId);
         })
         .then((event) => {
           // the last event should match, despite the order in which it was saved
@@ -112,20 +112,20 @@ function journalDynamoDBStoreTest() {
       const events = TestDataGenerator.randomEvents(sampleSize, aggregateId, startSequence).reverse();
       const lastEvent = events[0]; // last one is the first one in reversed order
 
-      journalStore
+      eventStore
         .saveBatch(events)
         .then(() => {
-          return journalStore.rollforwardTo(aggregateId, startSequence + rollForwadSize);
+          return eventStore.rollforwardTo(aggregateId, startSequence + rollForwadSize);
         })
         .then(() => {
-          return journalStore.getRange(aggregateId, startSequence, endSequence);
+          return eventStore.getRange(aggregateId, startSequence, endSequence);
         })
         .then((events) => {
           // the number of events should match the events stored in step 1 minus those rolled forward
           events.should.exist;
           events.should.be.length(sampleSize - rollForwadSize - 1);
 
-          return journalStore.getLast(aggregateId);
+          return eventStore.getLast(aggregateId);
         })
         .then((event) => {
           // the last event should match, despite the order in which it was saved
@@ -138,4 +138,4 @@ function journalDynamoDBStoreTest() {
   });
 }
 
-export default journalDynamoDBStoreTest;
+export default eventDynamoDBStoreTest;

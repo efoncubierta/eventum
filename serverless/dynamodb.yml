@@ -14,8 +14,10 @@ Resources:
         - AttributeName: sequence
           KeyType: RANGE
       ProvisionedThroughput:
-          ReadCapacityUnits: 1
-          WriteCapacityUnits: 1
+        ReadCapacityUnits: 1
+        WriteCapacityUnits: 1
+      StreamSpecification:
+        StreamViewType: NEW_IMAGE
 
   SnapshotsDynamoDbTable:
     Type: AWS::DynamoDB::Table
@@ -32,5 +34,5 @@ Resources:
         - AttributeName: sequence
           KeyType: RANGE
       ProvisionedThroughput:
-          ReadCapacityUnits: 1
-          WriteCapacityUnits: 1
+        ReadCapacityUnits: 1
+        WriteCapacityUnits: 1

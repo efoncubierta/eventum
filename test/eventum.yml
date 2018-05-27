@@ -2,8 +2,8 @@ provider: AWS
 
 aws:
   store:
-    journal:
-      tableName: eventum-journals-test
+    event:
+      tableName: eventum-events-test
     snapshot:
       tableName: eventum-snapshots-test
   stream:

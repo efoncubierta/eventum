@@ -6,7 +6,7 @@ export interface EventumAWSStoreDetails {
 }
 
 export interface EventumAWSStoreConfig {
-  journal?: EventumAWSStoreDetails;
+  event?: EventumAWSStoreDetails;
   snapshot?: EventumAWSStoreDetails;
 }
 

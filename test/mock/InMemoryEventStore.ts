@@ -3,8 +3,8 @@ import { Event } from "../../src/model/Event";
 /**
  * Manage journal data in memory.
  */
-export class InMemoryJournalStore {
-  private static journals: Event[] = [];
+export class InMemoryEventStore {
+  private static events: Event[] = [];
 
   /**
    * Put an event in the in-memory journals array. This action replaces any existing
@@ -14,7 +14,7 @@ export class InMemoryJournalStore {
    */
   public static putEvent(event: Event): void {
     this.deleteEvent(event.aggregateId, event.sequence);
-    this.journals.push(event);
+    this.events.push(event);
   }
 
   /**
@@ -24,7 +24,7 @@ export class InMemoryJournalStore {
    * @param sequence Sequence
    */
   public static deleteEvent(aggregateId: string, sequence: number): void {
-    this.journals = this.journals.filter((e) => {
+    this.events = this.events.filter((e) => {
       return !(e.aggregateId === aggregateId && e.sequence === sequence);
     });
   }
@@ -37,7 +37,7 @@ export class InMemoryJournalStore {
    * @return Event object or null if it doesn't exist
    */
   public static getEvent(aggregateId: string, sequence: number): Event {
-    return this.journals.find((event) => {
+    return this.events.find((event) => {
       return event.aggregateId === aggregateId && event.sequence === sequence;
     });
   }
@@ -59,7 +59,7 @@ export class InMemoryJournalStore {
     limit: number = Number.MAX_SAFE_INTEGER,
     reverse: boolean = false
   ): Event[] {
-    const events = this.journals
+    const events = this.events
       .filter((event) => {
         return event.aggregateId === aggregateId && event.sequence >= fromSequence && event.sequence <= toSequence;
       })
