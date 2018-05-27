@@ -9,8 +9,8 @@ plugins:
 custom:
   aws:
     dynamodb:
-      journals:
-        tableName: ${self:service.name}-journals-${self:provider.stage}
+      events:
+        tableName: ${self:service.name}-events-${self:provider.stage}
       snapshots:
         tableName: ${self:service.name}-snapshots-${self:provider.stage}
     kinesis:
@@ -27,7 +27,7 @@ provider:
   stage: dev
   region: eu-west-1
   environment:
-    JOURNALS_TABLE: ${self:custom.aws.dynamodb.journals.tableName}
+    EVENTS_TABLE: ${self:custom.aws.dynamodb.events.tableName}
     SNAPSHOTS_TABLE: ${self:custom.aws.dynamodb.snapshots.tableName}
     EVENTS_STREAM: ${self:custom.aws.kinesis.events.streamName}
     EVENTS_BUCKET: ${self:custom.aws.s3.events.bucketName}

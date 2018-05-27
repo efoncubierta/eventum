@@ -3,7 +3,7 @@ provider: AWS
 aws:
   store:
     event:
-      tableName: eventum-event-dev
+      tableName: eventum-events-dev
     snapshot:
       tableName: eventum-snapshots-dev
   stream:

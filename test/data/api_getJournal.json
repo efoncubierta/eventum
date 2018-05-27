@@ -1,5 +1,3 @@
 {
-  "pathParameters": {
-    "aggregateId": "1234"
-  }
+  "aggregateId": "1234"
 }

@@ -1,8 +1,8 @@
 Resources: 
-  JournalsDynamoDbTable:
+  EventsDynamoDbTable:
     Type: AWS::DynamoDB::Table
     Properties:
-      TableName: ${self:custom.aws.dynamodb.journals.tableName}
+      TableName: ${self:custom.aws.dynamodb.events.tableName}
       AttributeDefinitions:
         - AttributeName: aggregateId
           AttributeType: S
