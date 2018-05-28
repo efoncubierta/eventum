@@ -27,7 +27,6 @@
     "@types/chai-as-promised": "^7.1.0",
     "@types/deepmerge": "^2.1.0",
     "@types/faker": "^4.1.2",
-    "@types/js-yaml": "^3.11.1",
     "@types/mocha": "^5.2.0",
     "@types/node": "^8.10.13",
     "@types/retry": "^0.10.2",
@@ -37,8 +36,6 @@
     "chai-as-promised": "^7.1.1",
     "codecov": "^3.0.2",
     "faker": "^4.1.0",
-    "js-yaml": "^3.11.0",
-    "json-loader": "^0.5.7",
     "mocha": "^5.1.1",
     "nyc": "^11.7.3",
     "serverless-webpack": "^5.1.5",
@@ -49,8 +46,7 @@
     "typescript": "^2.5.2",
     "underscore": "^1.9.0",
     "uuid": "^3.2.1",
-    "webpack": "^4.8.3",
-    "yaml-loader": "^0.5.0"
+    "webpack": "^4.8.3"
   },
   "scripts": {
     "test:all": "./node_modules/.bin/mocha -r ts-node/register test/**/*.spec.ts",
@@ -59,12 +55,8 @@
     "codecov": "./node_modules/.bin/codecov"
   },
   "nyc": {
-    "exclude": [
-      "test/**/*.ts"
-    ],
-    "include": [
-      "src/**/*.ts"
-    ],
+    "exclude": ["test/**/*.ts"],
+    "include": ["src/**/*.ts"],
     "all": true
   }
 }

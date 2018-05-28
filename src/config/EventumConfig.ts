@@ -1,26 +1,14 @@
-import * as yaml from "js-yaml";
-import * as fs from "fs";
-
-export interface EventumAWSStoreDetails {
+export interface EventumAWSDynamoDBTable {
   tableName: string;
 }
 
-export interface EventumAWSStoreConfig {
-  event?: EventumAWSStoreDetails;
-  snapshot?: EventumAWSStoreDetails;
-}
-
-export interface EventumAWSStreamDetails {
-  streamName: string;
-}
-
-export interface EventumAWSStreamConfig {
-  event?: EventumAWSStreamDetails;
+export interface EventumAWSDynamoDBConfig {
+  events?: EventumAWSDynamoDBTable;
+  snapshots?: EventumAWSDynamoDBTable;
 }
 
 export interface EventumAWSConfig {
-  store?: EventumAWSStoreConfig;
-  stream?: EventumAWSStreamConfig;
+  dynamodb?: EventumAWSDynamoDBConfig;
 }
 
 export interface EventumSnapshotRetentionConfig {
@@ -40,3 +28,22 @@ export interface EventumConfig {
   aws?: EventumAWSConfig;
   snapshot?: EventumSnapshotConfig;
 }
+
+export const EventumConfigDefault: EventumConfig = {
+  provider: EventumProvider.AWS,
+  aws: {
+    dynamodb: {
+      events: {
+        tableName: process.env.EVENTS_TABLE_NAME
+      },
+      snapshots: {
+        tableName: process.env.SNAPSHOTS_TABLE_NAME
+      }
+    }
+  },
+  snapshot: {
+    retention: {
+      count: Number(process.env.SNAPSHOT_RETENTION_COUNT)
+    }
+  }
+};

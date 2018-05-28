@@ -3,18 +3,18 @@ import { BatchWriteItemOutput, BatchWriteItemRequestMap } from "aws-sdk/clients/
 import { EventStore, EventStoreBatchResponse } from "../EventStore";
 import { DynamoDBStore } from "./DynamoDBStore";
 import { Eventum } from "../../Eventum";
-import { EventumAWSStoreDetails } from "../../config/EventumConfig";
+import { EventumAWSDynamoDBTable } from "../../config/EventumConfig";
 import { Event } from "../../model/Event";
 
 /**
  * Manage journals in a DynamoDB table.
  */
 export class EventDynamoDBStore extends DynamoDBStore implements EventStore {
-  private journalConfig: EventumAWSStoreDetails;
+  private eventsTableConfig: EventumAWSDynamoDBTable;
 
   constructor() {
     super();
-    this.journalConfig = Eventum.config().aws.store.event;
+    this.eventsTableConfig = Eventum.config().aws.dynamodb.events;
   }
 
   public saveBatch(events: Event[]): Promise<EventStoreBatchResponse> {
@@ -24,7 +24,7 @@ export class EventDynamoDBStore extends DynamoDBStore implements EventStore {
 
     // Build the RequestItems request. One PutRequest per event
     const requestItems = {};
-    requestItems[this.journalConfig.tableName] = events.map((event) => {
+    requestItems[this.eventsTableConfig.tableName] = events.map((event) => {
       return {
         PutRequest: {
           Item: event
@@ -44,7 +44,7 @@ export class EventDynamoDBStore extends DynamoDBStore implements EventStore {
 
     // Build the RequestItems request. One DeleteRequest per event
     const requestItems = {};
-    requestItems[this.journalConfig.tableName] = events.map((event) => {
+    requestItems[this.eventsTableConfig.tableName] = events.map((event) => {
       return {
         DeleteRequest: {
           Key: event
@@ -67,7 +67,7 @@ export class EventDynamoDBStore extends DynamoDBStore implements EventStore {
     return new Promise((resolve, reject) => {
       documentClient.query(
         {
-          TableName: this.journalConfig.tableName,
+          TableName: this.eventsTableConfig.tableName,
           ProjectionExpression: "aggregateId, #sequence",
           KeyConditionExpression: "aggregateId = :aggregateId AND #sequence >= :sequence",
           ExpressionAttributeNames: {
@@ -95,7 +95,7 @@ export class EventDynamoDBStore extends DynamoDBStore implements EventStore {
 
         // Build the RequestItems request. One DeleteRequest per event
         const requestItems = {};
-        requestItems[this.journalConfig.tableName] = events.map((event) => {
+        requestItems[this.eventsTableConfig.tableName] = events.map((event) => {
           return {
             DeleteRequest: {
               Key: event
@@ -121,7 +121,7 @@ export class EventDynamoDBStore extends DynamoDBStore implements EventStore {
     return new Promise((resolve, reject) => {
       documentClient.query(
         {
-          TableName: this.journalConfig.tableName,
+          TableName: this.eventsTableConfig.tableName,
           ProjectionExpression: "aggregateId, #sequence",
           KeyConditionExpression: "aggregateId = :aggregateId AND #sequence <= :sequence",
           ExpressionAttributeNames: {
@@ -149,7 +149,7 @@ export class EventDynamoDBStore extends DynamoDBStore implements EventStore {
 
         // Build the RequestItems request. One DeleteRequest per event
         const requestItems = {};
-        requestItems[this.journalConfig.tableName] = events.map((event) => {
+        requestItems[this.eventsTableConfig.tableName] = events.map((event) => {
           return {
             DeleteRequest: {
               Key: event
@@ -171,7 +171,7 @@ export class EventDynamoDBStore extends DynamoDBStore implements EventStore {
     return new Promise((resolve, reject) => {
       documentClient.get(
         {
-          TableName: this.journalConfig.tableName,
+          TableName: this.eventsTableConfig.tableName,
           Key: {
             aggregateId,
             sequence
@@ -198,7 +198,7 @@ export class EventDynamoDBStore extends DynamoDBStore implements EventStore {
     return new Promise((resolve, reject) => {
       documentClient.query(
         {
-          TableName: this.journalConfig.tableName,
+          TableName: this.eventsTableConfig.tableName,
           KeyConditionExpression: "aggregateId = :aggregateId",
           ExpressionAttributeValues: {
             ":aggregateId": aggregateId
@@ -227,7 +227,7 @@ export class EventDynamoDBStore extends DynamoDBStore implements EventStore {
     return new Promise((resolve, reject) => {
       documentClient.query(
         {
-          TableName: this.journalConfig.tableName,
+          TableName: this.eventsTableConfig.tableName,
           KeyConditionExpression: "aggregateId = :aggregateId AND #sequence BETWEEN :fromSequence AND :toSequence",
           ExpressionAttributeNames: {
             "#sequence": "sequence"
@@ -253,8 +253,8 @@ export class EventDynamoDBStore extends DynamoDBStore implements EventStore {
     events: Event[],
     response: BatchWriteItemRequestMap
   ): Promise<EventStoreBatchResponse> {
-    if (response && response[this.journalConfig.tableName]) {
-      const failedKeys = response[this.journalConfig.tableName].map((request) => {
+    if (response && response[this.eventsTableConfig.tableName]) {
+      const failedKeys = response[this.eventsTableConfig.tableName].map((request) => {
         if (request.DeleteRequest) {
           return {
             aggregateId: request.DeleteRequest.Key.aggregateId.S,

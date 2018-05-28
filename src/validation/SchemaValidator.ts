@@ -17,10 +17,8 @@ import {
   EventumConfigSchema,
   EventumConfigProviderSchema,
   EventumAWSConfigSchema,
-  EventumAWSStoresConfigSchema,
-  EventumAWSStoresStoreConfigSchema,
-  EventumAWSStreamsConfigSchema,
-  EventumAWSStreamsStreamConfigSchema,
+  EventumAWSDynamoDBConfigSchema,
+  EventumAWSDynamoDBTableConfigSchema,
   EventumSnapshotConfigSchema,
   EventumSnapshotRetentionConfigSchema
 } from "./schema/EventumConfigSchema";
@@ -65,10 +63,8 @@ export class SchemaValidator {
     validator.addSchema(EventumConfigSchema, EventumConfigSchema.id);
     validator.addSchema(EventumConfigProviderSchema, EventumConfigProviderSchema.id);
     validator.addSchema(EventumAWSConfigSchema, EventumAWSConfigSchema.id);
-    validator.addSchema(EventumAWSStoresConfigSchema, EventumAWSStoresConfigSchema.id);
-    validator.addSchema(EventumAWSStoresStoreConfigSchema, EventumAWSStoresStoreConfigSchema.id);
-    validator.addSchema(EventumAWSStreamsConfigSchema, EventumAWSStreamsConfigSchema.id);
-    validator.addSchema(EventumAWSStreamsStreamConfigSchema, EventumAWSStreamsStreamConfigSchema.id);
+    validator.addSchema(EventumAWSDynamoDBConfigSchema, EventumAWSDynamoDBConfigSchema.id);
+    validator.addSchema(EventumAWSDynamoDBTableConfigSchema, EventumAWSDynamoDBTableConfigSchema.id);
     validator.addSchema(EventumSnapshotConfigSchema, EventumSnapshotConfigSchema.id);
     validator.addSchema(EventumSnapshotRetentionConfigSchema, EventumSnapshotRetentionConfigSchema.id);
 

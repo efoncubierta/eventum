@@ -2,19 +2,19 @@ import { DynamoDB } from "aws-sdk";
 import { SnapshotStore } from "../SnapshotStore";
 import { DynamoDBStore } from "./DynamoDBStore";
 import { Eventum } from "../../Eventum";
-import { EventumAWSStoreDetails, EventumSnapshotConfig } from "../../config/EventumConfig";
+import { EventumAWSDynamoDBTable, EventumSnapshotConfig } from "../../config/EventumConfig";
 import { Snapshot } from "../../model/Snapshot";
 
 /**
  * Manage snapshots in a DynamoDB table.
  */
 export class SnapshotDynamoDBStore extends DynamoDBStore implements SnapshotStore {
-  private snapshotStoreConfig: EventumAWSStoreDetails;
+  private snapshotsTableConfig: EventumAWSDynamoDBTable;
   private snapshotConfig: EventumSnapshotConfig;
 
   constructor() {
     super();
-    this.snapshotStoreConfig = Eventum.config().aws.store.snapshot;
+    this.snapshotsTableConfig = Eventum.config().aws.dynamodb.snapshots;
     this.snapshotConfig = Eventum.config().snapshot;
   }
 
@@ -24,7 +24,7 @@ export class SnapshotDynamoDBStore extends DynamoDBStore implements SnapshotStor
     return new Promise((resolve, reject) => {
       documentClient.get(
         {
-          TableName: this.snapshotStoreConfig.tableName,
+          TableName: this.snapshotsTableConfig.tableName,
           Key: {
             aggregateId,
             sequence
@@ -47,7 +47,7 @@ export class SnapshotDynamoDBStore extends DynamoDBStore implements SnapshotStor
     return new Promise((resolve, reject) => {
       documentClient.query(
         {
-          TableName: this.snapshotStoreConfig.tableName,
+          TableName: this.snapshotsTableConfig.tableName,
           KeyConditionExpression: "aggregateId = :aggregateId",
           ExpressionAttributeValues: {
             ":aggregateId": aggregateId
@@ -72,7 +72,7 @@ export class SnapshotDynamoDBStore extends DynamoDBStore implements SnapshotStor
     return new Promise((resolve, reject) => {
       documentClient.put(
         {
-          TableName: this.snapshotStoreConfig.tableName,
+          TableName: this.snapshotsTableConfig.tableName,
           Item: snapshot
         },
         (err) => {
@@ -92,7 +92,7 @@ export class SnapshotDynamoDBStore extends DynamoDBStore implements SnapshotStor
     return new Promise((resolve, reject) => {
       documentClient.query(
         {
-          TableName: this.snapshotStoreConfig.tableName,
+          TableName: this.snapshotsTableConfig.tableName,
           ProjectionExpression: "aggregateId, #sequence",
           KeyConditionExpression: "aggregateId = :aggregateId",
           ExpressionAttributeNames: {
@@ -143,7 +143,7 @@ export class SnapshotDynamoDBStore extends DynamoDBStore implements SnapshotStor
       * }
       */
       const requestItems = {};
-      requestItems[this.snapshotStoreConfig.tableName] = snapshots.map((event) => {
+      requestItems[this.snapshotsTableConfig.tableName] = snapshots.map((event) => {
         return {
           DeleteRequest: {
             Key: {

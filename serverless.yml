@@ -8,29 +8,35 @@ plugins:
 
 custom:
   aws:
+    region: eu-west-1
     dynamodb:
       events:
-        tableName: ${self:service.name}-events-${self:provider.stage}
+        tableName: ${self:service.name}-${self:provider.stage}-events
       snapshots:
-        tableName: ${self:service.name}-snapshots-${self:provider.stage}
+        tableName: ${self:service.name}-${self:provider.stage}-snapshots
     kinesis:
       events:
-        streamName: ${self:service.name}-events-${self:provider.stage}
+        streamName: ${self:service.name}-${self:provider.stage}-events
     s3:
       prefix: ezequiel
       events:
-        bucketName: ${self:custom.aws.s3.prefix}-${self:service.name}-events-${self:provider.stage}
+        bucketName: ${self:custom.aws.s3.prefix}-${self:service.name}-${self:provider.stage}-events
+  eventum:
+    snapshot:
+      retention:
+        count: 2
 
 provider:
   name: aws
   runtime: nodejs8.10
   stage: dev
-  region: eu-west-1
+  region: ${self:custom.aws.region}
   environment:
-    EVENTS_TABLE: ${self:custom.aws.dynamodb.events.tableName}
-    SNAPSHOTS_TABLE: ${self:custom.aws.dynamodb.snapshots.tableName}
-    EVENTS_STREAM: ${self:custom.aws.kinesis.events.streamName}
-    EVENTS_BUCKET: ${self:custom.aws.s3.events.bucketName}
+    EVENTS_TABLE_NAME: ${self:custom.aws.dynamodb.events.tableName}
+    SNAPSHOTS_TABLE_NAME: ${self:custom.aws.dynamodb.snapshots.tableName}
+    EVENTS_STREAM_NAME: ${self:custom.aws.kinesis.events.streamName}
+    EVENTS_BUCKET_NAME: ${self:custom.aws.s3.events.bucketName}
+    SNAPSHOT_RETENTION_COUNT: ${self:custom.eventum.snapshot.retention.count}
   iamRoleStatements:
     - Effect: Allow
       Action:
@@ -42,6 +48,11 @@ provider:
         - dynamodb:DeleteItem
         - dynamodb:BatchWriteItem
       Resource: "arn:aws:dynamodb:*"
+    - Effect: Allow
+      Action:
+        - lambda:InvokeFunction
+        - lambda:InvokeAsync
+      Resource: "arn:aws:lambda:*"
     # - Effect: "Allow"
     #   Action:
     #     - "kinesis:PutRecord"

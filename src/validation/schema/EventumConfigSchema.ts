@@ -27,32 +27,29 @@ export const EventumAWSConfigSchema: Schema = {
   id: "/Eventum/Config/AWS",
   type: "object",
   properties: {
-    stores: {
-      $ref: "/Eventum/Config/AWS/Stores"
-    },
-    streams: {
-      $ref: "/Eventum/Config/AWS/Streams"
+    dynamodb: {
+      $ref: "/Eventum/Config/AWS/DynamoDB"
     }
   },
-  required: ["store", "stream"]
+  required: ["dynamodb"]
 };
 
-export const EventumAWSStoresConfigSchema: Schema = {
-  id: "/Eventum/Config/AWS/Stores",
+export const EventumAWSDynamoDBConfigSchema: Schema = {
+  id: "/Eventum/Config/AWS/DynamoDB",
   type: "object",
   properties: {
-    journal: {
-      $ref: "/Eventum/Config/AWS/Stores/Store"
+    events: {
+      $ref: "/Eventum/Config/AWS/DynamoDB/Table"
     },
-    snapshot: {
-      $ref: "/Eventum/Config/AWS/Stores/Store"
+    snapshots: {
+      $ref: "/Eventum/Config/AWS/DynamoDB/Table"
     }
   },
-  required: ["journal", "snapshot"]
+  required: ["events", "snapshots"]
 };
 
-export const EventumAWSStoresStoreConfigSchema: Schema = {
-  id: "/Eventum/Config/AWS/Stores/Store",
+export const EventumAWSDynamoDBTableConfigSchema: Schema = {
+  id: "/Eventum/Config/AWS/DynamoDB/Table",
   type: "object",
   properties: {
     tableName: {
@@ -60,28 +57,6 @@ export const EventumAWSStoresStoreConfigSchema: Schema = {
     }
   },
   required: ["tableName"]
-};
-
-export const EventumAWSStreamsConfigSchema: Schema = {
-  id: "/Eventum/Config/AWS/Streams",
-  type: "object",
-  properties: {
-    event: {
-      $ref: "/Eventum/Config/AWS/Streams/Stream"
-    }
-  },
-  required: ["event"]
-};
-
-export const EventumAWSStreamsStreamConfigSchema: Schema = {
-  id: "/Eventum/Config/AWS/Streams/Stream",
-  type: "object",
-  properties: {
-    streamName: {
-      type: "string"
-    }
-  },
-  required: ["streamName"]
 };
 
 export const EventumSnapshotConfigSchema: Schema = {

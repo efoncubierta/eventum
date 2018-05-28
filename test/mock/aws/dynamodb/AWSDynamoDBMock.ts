@@ -103,11 +103,11 @@ export class AWSDynamoDBMock {
 
     Eventum.config({
       aws: {
-        store: {
-          event: {
+        dynamodb: {
+          events: {
             tableName: AWSEventDocumentClientMock.TABLE_NAME
           },
-          snapshot: {
+          snapshots: {
             tableName: AWSSnapshotDocumentClientMock.TABLE_NAME
           }
         }
@@ -122,6 +122,6 @@ export class AWSDynamoDBMock {
     AWS.restore("DynamoDB.DocumentClient");
 
     // restore Eventum default configuration
-    Eventum.config({});
+    Eventum.resetConfig();
   }
 }

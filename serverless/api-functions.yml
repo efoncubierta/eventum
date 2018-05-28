@@ -1,16 +1,16 @@
-api_getJournal:
+api-getJournal:
   handler: src/lambda/api/getJournal.handler
 
-api_getSnapshot:
+api-getSnapshot:
   handler: src/lambda/api/getSnapshot.handler
 
-api_saveSnapshot:
+api-saveSnapshot:
   handler: src/lambda/api/saveSnapshot.handler
 
-api_getEvent:
+api-getEvent:
   handler: src/lambda/api/getEvent.handler
 
-api_saveEvents:
+api-saveEvents:
   handler: src/lambda/api/saveEvents.handler
   # events:
   #   - stream:
@@ -21,5 +21,5 @@ api_saveEvents:
   #         - Arn
   #     batchSize: 50
 
-api_replay:
+api-replay:
   handler: src/lambda/api/replay.handler

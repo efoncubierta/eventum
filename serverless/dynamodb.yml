@@ -36,3 +36,20 @@ Resources:
       ProvisionedThroughput:
         ReadCapacityUnits: 1
         WriteCapacityUnits: 1
+
+Outputs:
+  EventsDynamoDbTableArn:
+    Value:
+      Fn::GetAtt:
+        - EventsDynamoDbTable
+        - Arn
+  EventsDynamoDbTableStreamArn:
+    Value:
+      Fn::GetAtt:
+        - EventsDynamoDbTable
+        - StreamArn
+  SnapshotsDynamoDbTableArn:
+    Value:
+      Fn::GetAtt:
+        - SnapshotsDynamoDbTable
+        - Arn
