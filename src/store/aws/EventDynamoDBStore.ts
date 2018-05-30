@@ -18,8 +18,8 @@ export class EventDynamoDBStore extends DynamoDBStore implements EventStore {
   }
 
   public saveBatch(events: Event[]): Promise<EventStoreBatchResponse> {
-    if (events.length === 0) {
-      return;
+    if (!events || events.length === 0) {
+      return Promise.resolve({});
     }
 
     // Build the RequestItems request. One PutRequest per event
@@ -38,8 +38,8 @@ export class EventDynamoDBStore extends DynamoDBStore implements EventStore {
   }
 
   public removeBatch(events: Event[]): Promise<EventStoreBatchResponse> {
-    if (events.length === 0) {
-      return;
+    if (!events || events.length === 0) {
+      return Promise.resolve({});
     }
 
     // Build the RequestItems request. One DeleteRequest per event
@@ -64,33 +64,26 @@ export class EventDynamoDBStore extends DynamoDBStore implements EventStore {
      * 1. Get all events to be rolled back.
      * 2. Build a RequestItem and call batchWrite.
      */
-    return new Promise((resolve, reject) => {
-      documentClient.query(
-        {
-          TableName: this.eventsTableConfig.tableName,
-          ProjectionExpression: "aggregateId, #sequence",
-          KeyConditionExpression: "aggregateId = :aggregateId AND #sequence >= :sequence",
-          ExpressionAttributeNames: {
-            "#sequence": "sequence"
-          },
-          ExpressionAttributeValues: {
-            ":aggregateId": aggregateId,
-            ":sequence": sequence
-          }
+    return documentClient
+      .query({
+        TableName: this.eventsTableConfig.tableName,
+        ProjectionExpression: "aggregateId, #sequence",
+        KeyConditionExpression: "aggregateId = :aggregateId AND #sequence >= :sequence",
+        ExpressionAttributeNames: {
+          "#sequence": "sequence"
         },
-        (error, result) => {
-          if (error) {
-            reject(error);
-          } else {
-            resolve(result.Items as Event[]);
-          }
+        ExpressionAttributeValues: {
+          ":aggregateId": aggregateId,
+          ":sequence": sequence
         }
-      );
-    })
-      .then((events: Event[]) => {
+      })
+      .promise()
+      .then((result) => {
+        const events = result.Items as Event[];
+
         // no further actions if there are no events to be deleted
         if (events.length === 0) {
-          return;
+          return null;
         }
 
         // Build the RequestItems request. One DeleteRequest per event
@@ -107,7 +100,7 @@ export class EventDynamoDBStore extends DynamoDBStore implements EventStore {
       })
       .then(() => {
         // TODO handle response?
-        return;
+        return null;
       });
   }
 
@@ -118,30 +111,22 @@ export class EventDynamoDBStore extends DynamoDBStore implements EventStore {
      * 1. Get all events to be rolled forward.
      * 2. Build a RequestItem and call batchWrite.
      */
-    return new Promise((resolve, reject) => {
-      documentClient.query(
-        {
-          TableName: this.eventsTableConfig.tableName,
-          ProjectionExpression: "aggregateId, #sequence",
-          KeyConditionExpression: "aggregateId = :aggregateId AND #sequence <= :sequence",
-          ExpressionAttributeNames: {
-            "#sequence": "sequence"
-          },
-          ExpressionAttributeValues: {
-            ":aggregateId": aggregateId,
-            ":sequence": sequence
-          }
+    return documentClient
+      .query({
+        TableName: this.eventsTableConfig.tableName,
+        ProjectionExpression: "aggregateId, #sequence",
+        KeyConditionExpression: "aggregateId = :aggregateId AND #sequence <= :sequence",
+        ExpressionAttributeNames: {
+          "#sequence": "sequence"
         },
-        (error, result) => {
-          if (error) {
-            reject(error);
-          } else {
-            resolve(result.Items as Event[]);
-          }
+        ExpressionAttributeValues: {
+          ":aggregateId": aggregateId,
+          ":sequence": sequence
         }
-      );
-    })
-      .then((events: Event[]) => {
+      })
+      .promise()
+      .then((result) => {
+        const events = result.Items as Event[];
         // no further actions if there are no events to be deleted
         if (events.length === 0) {
           return;
@@ -168,24 +153,18 @@ export class EventDynamoDBStore extends DynamoDBStore implements EventStore {
   public get(aggregateId: string, sequence: number): Promise<Event> {
     const documentClient = new DynamoDB.DocumentClient();
 
-    return new Promise((resolve, reject) => {
-      documentClient.get(
-        {
-          TableName: this.eventsTableConfig.tableName,
-          Key: {
-            aggregateId,
-            sequence
-          }
-        },
-        (error, result) => {
-          if (error) {
-            reject(error);
-          } else {
-            resolve(result.Item as Event);
-          }
+    return documentClient
+      .get({
+        TableName: this.eventsTableConfig.tableName,
+        Key: {
+          aggregateId,
+          sequence
         }
-      );
-    });
+      })
+      .promise()
+      .then((result) => {
+        return result.Item as Event;
+      });
   }
 
   public getLast(aggregateId: string): Promise<Event> {
@@ -195,26 +174,20 @@ export class EventDynamoDBStore extends DynamoDBStore implements EventStore {
      * 1. Get one event by aggregateID in reverse order (ScanIndexForward = false)
      * 2. Return the event if found
      */
-    return new Promise((resolve, reject) => {
-      documentClient.query(
-        {
-          TableName: this.eventsTableConfig.tableName,
-          KeyConditionExpression: "aggregateId = :aggregateId",
-          ExpressionAttributeValues: {
-            ":aggregateId": aggregateId
-          },
-          ScanIndexForward: false,
-          Limit: 1
+    return documentClient
+      .query({
+        TableName: this.eventsTableConfig.tableName,
+        KeyConditionExpression: "aggregateId = :aggregateId",
+        ExpressionAttributeValues: {
+          ":aggregateId": aggregateId
         },
-        (error, result) => {
-          if (error) {
-            reject(error);
-          } else {
-            resolve(result.Items.length > 0 ? (result.Items[0] as Event) : null);
-          }
-        }
-      );
-    });
+        ScanIndexForward: false,
+        Limit: 1
+      })
+      .promise()
+      .then((result) => {
+        return result.Items.length > 0 ? (result.Items[0] as Event) : null;
+      });
   }
 
   public getRange(
@@ -224,29 +197,23 @@ export class EventDynamoDBStore extends DynamoDBStore implements EventStore {
   ): Promise<Event[]> {
     const documentClient = new DynamoDB.DocumentClient();
 
-    return new Promise((resolve, reject) => {
-      documentClient.query(
-        {
-          TableName: this.eventsTableConfig.tableName,
-          KeyConditionExpression: "aggregateId = :aggregateId AND #sequence BETWEEN :fromSequence AND :toSequence",
-          ExpressionAttributeNames: {
-            "#sequence": "sequence"
-          },
-          ExpressionAttributeValues: {
-            ":aggregateId": aggregateId,
-            ":fromSequence": fromSequence,
-            ":toSequence": toSequence
-          }
+    return documentClient
+      .query({
+        TableName: this.eventsTableConfig.tableName,
+        KeyConditionExpression: "aggregateId = :aggregateId AND #sequence BETWEEN :fromSequence AND :toSequence",
+        ExpressionAttributeNames: {
+          "#sequence": "sequence"
         },
-        (error, result) => {
-          if (error) {
-            reject(error);
-          } else {
-            resolve(result.Items as Event[]);
-          }
+        ExpressionAttributeValues: {
+          ":aggregateId": aggregateId,
+          ":fromSequence": fromSequence,
+          ":toSequence": toSequence
         }
-      );
-    });
+      })
+      .promise()
+      .then((result) => {
+        return result.Items as Event[];
+      });
   }
 
   private toEventStoreBatchResponse(

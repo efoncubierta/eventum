@@ -5,22 +5,23 @@ import { APIGatewayEvent, Callback, Context, Handler } from "aws-lambda";
 import { SchemaValidator } from "../../validation/SchemaValidator";
 import { LambdaSaveEventsRequest } from "../../message/LambdaMessages";
 import { AggregateService } from "../../service/AggregateService";
-import { HandleLambdaResponse } from "../HandleLambdaResponse";
+
+// Eventum lambda dependencies
+import { wrapAWSLambdaHandler } from "../wrapper";
+import { EventumLambdaHandler } from "../EventumLambdaHandler";
+import { ValidationError } from "../error/ValidationError";
 
 const snapshotService = new AggregateService();
 
-export const handler: Handler = (request: LambdaSaveEventsRequest, context: Context, callback: Callback) => {
+const saveEvents: EventumLambdaHandler<LambdaSaveEventsRequest, void> = (request: LambdaSaveEventsRequest) => {
   // validate body
   const validationResult = SchemaValidator.validateLambdaSaveEventsRequest(request);
   if (validationResult.errors.length > 0) {
-    HandleLambdaResponse.badRequest(callback, validationResult.errors[0].message);
+    return Promise.reject(new ValidationError(validationResult.errors[0].message));
   }
 
-  AggregateService.saveEvents(request.events)
-    .then(() => {
-      HandleLambdaResponse.success(callback, {});
-    })
-    .catch((err) => {
-      HandleLambdaResponse.unknown(callback, err.message);
-    });
+  // call saveEvents() and handle response
+  return AggregateService.saveEvents(request.events);
 };
+
+export const handler: Handler = wrapAWSLambdaHandler(saveEvents);

@@ -47,3 +47,23 @@ export const SnapshotSchema: Schema = {
   },
   required: ["aggregateId", "sequence", "payload"]
 };
+
+export const JournalSchema: Schema = {
+  id: "/Model/Journal",
+  type: "object",
+  properties: {
+    aggregateId: {
+      $ref: "/Model/AggregateID"
+    },
+    snapshot: {
+      $ref: "/Model/Snapshot"
+    },
+    events: {
+      type: "array",
+      items: {
+        $ref: "/Model/Event"
+      }
+    }
+  },
+  required: ["aggregateId", "snapshot", "events"]
+};

@@ -28,18 +28,16 @@ export abstract class DynamoDBStore {
       operation.attempt((current) => {
         documentClient.batchWrite(
           {
-            RequestItems: requestItems
+            RequestItems: unprocessedItems
           },
           (error, result) => {
-            // retry?
-            if (operation.retry(error)) {
-              // update list of unprocessed items
-              unprocessedItems = result ? result.UnprocessedItems || requestItems : requestItems;
-              return;
-            }
-
             if (error) {
               reject(error);
+            } else if (result.UnprocessedItems && operation.retry(new Error("Unprocessed items"))) {
+              // retry?
+              // update list of unprocessed items
+              unprocessedItems = result.UnprocessedItems;
+              return;
             } else {
               resolve(result.UnprocessedItems);
             }

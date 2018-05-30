@@ -4,6 +4,7 @@ import { StoreFactory } from "../store/StoreFactory";
 import { Event } from "../model/Event";
 import { Snapshot } from "../model/Snapshot";
 import { Journal, JournalBuilder } from "../model/Journal";
+import { SchemaValidator } from "../validation/SchemaValidator";
 
 /**
  * An aggregate service to manage aggregate data from the user space.
@@ -18,6 +19,7 @@ export class AggregateService {
    *
    * @param aggregateId Aggregate id
    * @param sequence Sequence
+   * @return Promise with an event, or null if not found
    */
   public static getEvent(aggregateId: string, sequence: number): Promise<Event> {
     return StoreFactory.getEventStore().get(aggregateId, sequence);
@@ -32,6 +34,7 @@ export class AggregateService {
    * 3. Build and return the journal.
    *
    * @param aggregateId Aggregate id
+   * @return Promise with a journal, or null if not found
    */
   public static getJournal(aggregateId: string): Promise<Journal> {
     let journalBuilder = new JournalBuilder().aggregateId(aggregateId);
@@ -42,7 +45,7 @@ export class AggregateService {
         // update journal builder
         journalBuilder = journalBuilder.snapshot(snapshot);
 
-        // fetch latest events
+        // fetch events since last snapshot or the begining
         const fromSequence = snapshot ? snapshot.sequence + 1 : 0;
         return StoreFactory.getEventStore().getRange(aggregateId, fromSequence);
       })
@@ -51,7 +54,7 @@ export class AggregateService {
         const journal = journalBuilder.events(events).build();
 
         // only return the journal if there is at least one snapshot or one event
-        return journal.snapshot || journal.events.length ? journal : null;
+        return journal.snapshot || journal.events.length > 0 ? journal : null;
       });
   }
 
@@ -60,6 +63,7 @@ export class AggregateService {
    *
    * @param aggregateId Aggregate id
    * @param sequence Sequence
+   * @return Promise with a snapshot, or null if not found
    */
   public static getSnapshot(aggregateId: string, sequence: number): Promise<Snapshot> {
     return StoreFactory.getSnapshotStore().get(aggregateId, sequence);
@@ -114,16 +118,58 @@ export class AggregateService {
    * @param events Events
    */
   public static saveEvents(events: Event[]): Promise<void> {
-    // TODO validate events
+    // reject undefined list of events
+    if (!events) {
+      return Promise.reject(new Error(`(AggregateService) List of events cannot be undefined`));
+    }
 
-    return StoreFactory.getEventStore()
-      .saveBatch(events)
+    // build a dictionary aggregateId -> Event[]
+    const eventsDic = events
+      .sort((eventA, eventB) => {
+        return eventA.sequence - eventB.sequence;
+      })
+      .reduce((last, current) => {
+        // all events must be valid according to the schema
+        const result = SchemaValidator.validateEvent(current);
+        if (result.errors.length > 0) {
+          throw new Error(result.errors[0].message);
+        }
+
+        // add aggregateId entry to the dictionary, if doesn't exist already, and add the event to it
+        last[current.aggregateId] = last[current.aggregateId] || [];
+        last[current.aggregateId].push(current);
+
+        return last;
+      }, {});
+
+    // for each aggregateId, get the last event stored and validate that new events are correlated to it
+    const correlationValidationPromises = Object.keys(eventsDic).map((aggregateId) => {
+      return StoreFactory.getEventStore()
+        .getLast(aggregateId)
+        .then((lastEvent) => {
+          let nextSequence = lastEvent ? lastEvent.sequence + 1 : 1;
+
+          for (let i = 0; i < eventsDic[aggregateId].length; i++, nextSequence++) {
+            const event = eventsDic[aggregateId][i];
+            if (event.sequence !== nextSequence) {
+              return Promise.reject(
+                new Error(
+                  `Event(${aggregateId}, ${event.sequence}) is not correlated to the latest sequence ${nextSequence -
+                    1}`
+                )
+              );
+            }
+          }
+        });
+    });
+
+    return Promise.all(correlationValidationPromises)
+      .then(() => {
+        return StoreFactory.getEventStore().saveBatch(events);
+      })
       .then((response) => {
         // TODO handle response
         return;
-      })
-      .catch((error) => {
-        // TODO rollback
       });
   }
 }

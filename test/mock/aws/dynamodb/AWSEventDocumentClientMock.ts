@@ -9,7 +9,7 @@ export class AWSEventDocumentClientMock implements AWSDocumentClientMock {
   }
 
   public handleGet(params: any, callback: (error?: Error, response?: any) => void): void {
-    // JournalDynamoDBStore.getEvent()
+    // EventDynamoDBStore.getEvent()
     const aggregateId: string = params.Key.aggregateId;
     const sequence: number = params.Key.sequence;
     callback(null, {
@@ -33,7 +33,7 @@ export class AWSEventDocumentClientMock implements AWSDocumentClientMock {
     if (
       params.KeyConditionExpression === "aggregateId = :aggregateId AND #sequence BETWEEN :fromSequence AND :toSequence"
     ) {
-      // JournalDynamoDBStore.getEvents()
+      // EventDynamoDBStore.getEvents()
       const aggregateId = params.ExpressionAttributeValues[":aggregateId"];
       const fromSequence = params.ExpressionAttributeValues[":fromSequence"];
       const toSequence = params.ExpressionAttributeValues[":toSequence"];
@@ -41,27 +41,27 @@ export class AWSEventDocumentClientMock implements AWSDocumentClientMock {
         Items: InMemoryEventStore.getEvents(aggregateId, fromSequence, toSequence)
       });
     } else if (params.KeyConditionExpression === "aggregateId = :aggregateId") {
-      // JournalDynamoDBStore.getLastEvent()
+      // EventDynamoDBStore.getLastEvent()
       const aggregateId = params.ExpressionAttributeValues[":aggregateId"];
       callback(null, {
         Items: InMemoryEventStore.getEvents(aggregateId, 0, Number.MAX_SAFE_INTEGER, 1, true)
       });
     } else if (params.KeyConditionExpression === "aggregateId = :aggregateId AND #sequence >= :sequence") {
-      // JournalDynamoDBStore.rollBackTo()
+      // EventDynamoDBStore.rollBackTo()
       const aggregateId = params.ExpressionAttributeValues[":aggregateId"];
       const sequence = params.ExpressionAttributeValues[":sequence"];
       callback(null, {
         Items: InMemoryEventStore.getEvents(aggregateId, sequence, Number.MAX_SAFE_INTEGER)
       });
     } else if (params.KeyConditionExpression === "aggregateId = :aggregateId AND #sequence <= :sequence") {
-      // JournalDynamoDBStore.rollForwardTo()
+      // EventDynamoDBStore.rollForwardTo()
       const aggregateId = params.ExpressionAttributeValues[":aggregateId"];
       const sequence = params.ExpressionAttributeValues[":sequence"];
       callback(null, {
         Items: InMemoryEventStore.getEvents(aggregateId, 0, sequence)
       });
     } else if (params.KeyConditionExpression === "aggregateId = :aggregateId AND #sequence >= :fromSequence") {
-      // JournalDynamoDBStore.getLastSequence()
+      // EventDynamoDBStore.getLastSequence()
       const aggregateId = params.ExpressionAttributeValues[":aggregateId"];
       const fromSequence = params.ExpressionAttributeValues[":fromSequence"];
       callback(null, {
@@ -104,7 +104,7 @@ export class AWSEventDocumentClientMock implements AWSDocumentClientMock {
     });
 
     callback(null, {
-      UnprocessedItems: unprocessedItems
+      UnprocessedItems: Object.keys(unprocessedItems).length > 0 ? unprocessedItems : null
     });
   }
 }

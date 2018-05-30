@@ -7,15 +7,15 @@ import "mocha";
 
 // test dependencies
 import { promisify } from "util";
-import { TestDataGenerator } from "../../util/TestDataGenerator";
-import { AWSMock } from "../../mock/aws";
+import { TestDataGenerator } from "../util/TestDataGenerator";
+import { AWSMock } from "../mock/aws";
 
 // lambda functions
-import { handler as getEventHandler } from "../../../src/lambda/api/getEvent";
-import { handler as getJournalHandler } from "../../../src/lambda/api/getJournal";
-import { handler as getSnapshotHandler } from "../../../src/lambda/api/getSnapshot";
-import { handler as saveSnapshotHandler } from "../../../src/lambda/api/saveSnapshot";
-import { handler as saveEventsHandler } from "../../../src/lambda/api/saveEvents";
+import { handler as getEventHandler } from "../../src/lambda/api/getEvent";
+import { handler as getJournalHandler } from "../../src/lambda/api/getJournal";
+import { handler as getSnapshotHandler } from "../../src/lambda/api/getSnapshot";
+import { handler as saveSnapshotHandler } from "../../src/lambda/api/saveSnapshot";
+import { handler as saveEventsHandler } from "../../src/lambda/api/saveEvents";
 
 // promisify lambda functions
 const getEventHandlerP = promisify(getEventHandler);
@@ -24,8 +24,8 @@ const getSnapshotHandlerP = promisify(getSnapshotHandler);
 const saveSnapshotHandlerP = promisify(saveSnapshotHandler);
 const saveEventsHandlerP = promisify(saveEventsHandler);
 
-function aggregatesAPITest() {
-  describe("api/*", () => {
+function apiTests() {
+  describe("API", () => {
     before(() => {
       // setup chai
       chai.should();
@@ -40,82 +40,95 @@ function aggregatesAPITest() {
       AWSMock.restoreMock();
     });
 
-    it("should respond 'BadRequest' for random requests", (done) => {
+    it("getEvent() should respond 'BadRequest' for random requests", () => {
       const randomRequest = TestDataGenerator.randomPayload();
 
-      getEventHandlerP(randomRequest, null)
-        .then((response) => {
-          response.should.exist;
-          response.$type.should.exist;
-          response.$type.should.equal("BadRequest");
-
-          return getJournalHandlerP(randomRequest, null);
-        })
-        .then((response) => {
-          response.should.exist;
-          response.$type.should.exist;
-          response.$type.should.equal("BadRequest");
-
-          return getSnapshotHandlerP(randomRequest, null);
-        })
-        .then((response) => {
-          response.should.exist;
-          response.$type.should.exist;
-          response.$type.should.equal("BadRequest");
-
-          return saveSnapshotHandlerP(randomRequest, null);
-        })
-        .then((response) => {
-          response.should.exist;
-          response.$type.should.exist;
-          response.$type.should.equal("BadRequest");
-
-          return saveEventsHandlerP(randomRequest, null);
-        })
-        .then((response) => {
-          response.should.exist;
-          response.$type.should.exist;
-          response.$type.should.equal("BadRequest");
-        })
-        .then(done)
-        .catch(done);
+      return getEventHandlerP(randomRequest, null).then((response) => {
+        response.should.exist;
+        response.$type.should.exist;
+        response.$type.should.equal("BadRequest");
+      });
     });
 
-    it("should respond 'NotFound' for missing aggregates", (done) => {
+    it("getEvent() should respond 'NotFound' for a random aggregate and sequence", () => {
       const aggregateId = TestDataGenerator.randomAggregateId();
       const sequence = TestDataGenerator.randomSequence();
       const getEventRequest = TestDataGenerator.randomLambdaGetEventRequest(aggregateId, sequence);
-      const getJournalRequest = TestDataGenerator.randomLambdaGetJournalRequest(aggregateId);
-      const getSnapshotRequest = TestDataGenerator.randomLambdaGetSnapshotRequest(aggregateId, sequence);
 
-      getEventHandlerP(getEventRequest, null)
-        .then((response) => {
-          response.should.exist;
-          response.$type.should.exist;
-          response.$type.should.equal("NotFound");
-
-          return getJournalHandlerP(getJournalRequest, null);
-        })
-        .then((response) => {
-          response.should.exist;
-          response.$type.should.exist;
-          response.$type.should.equal("NotFound");
-
-          return getSnapshotHandlerP(getSnapshotRequest, null);
-        })
-        .then((response) => {
-          response.should.exist;
-          response.$type.should.exist;
-          response.$type.should.equal("NotFound");
-        })
-        .then(done)
-        .catch(done);
+      return getEventHandlerP(getEventRequest, null).then((response) => {
+        response.should.exist;
+        response.$type.should.exist;
+        response.$type.should.equal("NotFound");
+      });
     });
 
-    it("should save a sequence of events", (done) => {
-      const sampleSize = 50;
+    it("getJournal() should respond 'BadRequest' for random requests", () => {
+      const randomRequest = TestDataGenerator.randomPayload();
+
+      return getJournalHandlerP(randomRequest, null).then((response) => {
+        response.should.exist;
+        response.$type.should.exist;
+        response.$type.should.equal("BadRequest");
+      });
+    });
+
+    it("getSnapshot() should respond 'BadRequest' for random requests", () => {
+      const randomRequest = TestDataGenerator.randomPayload();
+
+      return getSnapshotHandlerP(randomRequest, null).then((response) => {
+        response.should.exist;
+        response.$type.should.exist;
+        response.$type.should.equal("BadRequest");
+      });
+    });
+
+    it("saveSnapshot() should respond 'BadRequest' for random requests", () => {
+      const randomRequest = TestDataGenerator.randomPayload();
+
+      return saveSnapshotHandlerP(randomRequest, null).then((response) => {
+        response.should.exist;
+        response.$type.should.exist;
+        response.$type.should.equal("BadRequest");
+      });
+    });
+
+    it("saveEvents() should respond 'BadRequest' for random requests", () => {
+      const randomRequest = TestDataGenerator.randomPayload();
+
+      return saveEventsHandlerP(randomRequest, null).then((response) => {
+        response.should.exist;
+        response.$type.should.exist;
+        response.$type.should.equal("BadRequest");
+      });
+    });
+
+    it("getJournal() should respond 'NotFound' for a random aggregateId", () => {
       const aggregateId = TestDataGenerator.randomAggregateId();
-      const startSequence = TestDataGenerator.randomSequence();
+      const getJournalRequest = TestDataGenerator.randomLambdaGetJournalRequest(aggregateId);
+
+      return getJournalHandlerP(getJournalRequest, null).then((response) => {
+        response.should.exist;
+        response.$type.should.exist;
+        response.$type.should.equal("NotFound");
+      });
+    });
+
+    it("getSnapshot() should respond 'NotFound' for a random aggregateId and sequence", () => {
+      const aggregateId = TestDataGenerator.randomAggregateId();
+      const sequence = TestDataGenerator.randomSequence();
+      const getSnapshotRequest = TestDataGenerator.randomLambdaGetSnapshotRequest(aggregateId, sequence);
+
+      return getSnapshotHandlerP(getSnapshotRequest, null).then((response) => {
+        response.should.exist;
+        response.$type.should.exist;
+        response.$type.should.equal("NotFound");
+      });
+    });
+
+    it("saveEvents() should save a batch of events", () => {
+      const sampleSize = 20;
+      const aggregateId = TestDataGenerator.randomAggregateId();
+      const startSequence = 1;
       const saveEventsRequest = TestDataGenerator.randomLambdaSaveEventsRequest(sampleSize, aggregateId, startSequence);
       const getEventRequest = TestDataGenerator.randomLambdaGetEventRequest(aggregateId, startSequence);
       const getJournalRequest = TestDataGenerator.randomLambdaGetJournalRequest(aggregateId);
@@ -123,7 +136,7 @@ function aggregatesAPITest() {
       // get the deserialize events for validation
       const events = saveEventsRequest.events;
 
-      saveEventsHandlerP(saveEventsRequest, null)
+      return saveEventsHandlerP(saveEventsRequest, null)
         .then((response) => {
           response.should.exist;
           response.$type.should.exist;
@@ -149,17 +162,15 @@ function aggregatesAPITest() {
           response.journal.should.exist;
           response.journal.aggregateId.should.equals(aggregateId);
           response.journal.events.length.should.equals(events.length);
-        })
-        .then(done)
-        .catch(done);
+        });
     });
 
-    it("should take a snapshot and get a valid journal", (done) => {
+    it("saveSnapshot() should save a snapshot and get a valid journal", () => {
       // const retentionCount = Eventum.config().snapshot.retention.count;
-      const sampleSize = 50;
+      const sampleSize = 20;
       const aggregateId = TestDataGenerator.randomAggregateId();
-      const startSequence = TestDataGenerator.randomSequence();
-      const snapshotSequence = startSequence + sampleSize - 10;
+      const startSequence = 1;
+      const snapshotSequence = sampleSize - 10;
       const saveEventsRequest = TestDataGenerator.randomLambdaSaveEventsRequest(sampleSize, aggregateId, startSequence);
       const saveSnapshotRequest = TestDataGenerator.randomLambdaSaveSnapshotRequest(aggregateId, snapshotSequence);
       const getSnapshotRequest = TestDataGenerator.randomLambdaGetSnapshotRequest(aggregateId, snapshotSequence);
@@ -169,7 +180,7 @@ function aggregatesAPITest() {
       const events = saveEventsRequest.events;
       const payload = saveSnapshotRequest.payload;
 
-      saveEventsHandlerP(saveEventsRequest, null)
+      return saveEventsHandlerP(saveEventsRequest, null)
         .then((response) => {
           response.should.exist;
           response.$type.should.exist;
@@ -206,12 +217,10 @@ function aggregatesAPITest() {
           response.journal.snapshot.should.exist;
           response.journal.snapshot.aggregateId.should.equal(aggregateId);
           response.journal.snapshot.sequence.should.equal(snapshotSequence);
-          response.journal.events.length.should.equals(9);
-        })
-        .then(done)
-        .catch(done);
+          response.journal.events.length.should.equals(10);
+        });
     });
   });
 }
 
-export default aggregatesAPITest;
+export default apiTests;

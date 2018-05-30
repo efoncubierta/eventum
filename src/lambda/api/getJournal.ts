@@ -4,27 +4,33 @@ import { APIGatewayEvent, Callback, Context, Handler } from "aws-lambda";
 // Eventum dependencies
 import { SchemaValidator } from "../../validation/SchemaValidator";
 import { AggregateService } from "../../service/AggregateService";
-import { HandleLambdaResponse } from "../HandleLambdaResponse";
 import { LambdaGetJournalRequest, LambdaGetJournalResponse } from "../../message/LambdaMessages";
 
-export const handler: Handler = (request: LambdaGetJournalRequest, context: Context, callback: Callback) => {
+// Eventum lambda dependencies
+import { wrapAWSLambdaHandler } from "../wrapper";
+import { EventumLambdaHandler } from "../EventumLambdaHandler";
+import { JournalNotFoundError } from "../error/JournalNotFoundError";
+import { ValidationError } from "../error/ValidationError";
+
+const getJournal: EventumLambdaHandler<LambdaGetJournalRequest, LambdaGetJournalResponse> = (
+  request: LambdaGetJournalRequest
+) => {
   // validate Lambda incoming request
   const validationResult = SchemaValidator.validateLambdaGetJournalRequest(request);
   if (validationResult.errors.length > 0) {
-    HandleLambdaResponse.badRequest(callback, validationResult.errors[0].message);
+    return Promise.reject(new ValidationError(validationResult.errors[0].message));
   }
 
-  AggregateService.getJournal(request.aggregateId)
-    .then((journal) => {
-      if (journal) {
-        HandleLambdaResponse.success(callback, {
-          journal
-        } as LambdaGetJournalResponse);
-      } else {
-        HandleLambdaResponse.notFound(callback, `Journal(${request.aggregateId}) not found`);
-      }
-    })
-    .catch((err) => {
-      HandleLambdaResponse.unknown(callback, err.message);
-    });
+  // call getJournal() and handle response
+  return AggregateService.getJournal(request.aggregateId).then((journal) => {
+    if (journal) {
+      return {
+        journal
+      } as LambdaGetJournalResponse;
+    } else {
+      throw new JournalNotFoundError(request.aggregateId);
+    }
+  });
 };
+
+export const handler: Handler = wrapAWSLambdaHandler(getJournal);

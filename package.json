@@ -55,8 +55,12 @@
     "codecov": "./node_modules/.bin/codecov"
   },
   "nyc": {
-    "exclude": ["test/**/*.ts"],
-    "include": ["src/**/*.ts"],
+    "exclude": [
+      "test/**/*.ts"
+    ],
+    "include": [
+      "src/**/*.ts"
+    ],
     "all": true
   }
 }

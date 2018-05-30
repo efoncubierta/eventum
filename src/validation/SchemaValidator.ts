@@ -1,7 +1,7 @@
 import { Schema, Validator, ValidatorResult } from "jsonschema";
 
 // model schemas
-import { AggregateIdSchema, SequenceSchema, EventSchema, SnapshotSchema } from "./schema/ModelSchema";
+import { AggregateIdSchema, SequenceSchema, EventSchema, SnapshotSchema, JournalSchema } from "./schema/ModelSchema";
 
 // REST API schemas
 import {
@@ -32,6 +32,9 @@ import {
   LambdaSaveSnapshotSchema,
   LambdaSaveEventsSchema
 } from "./schema/LambdaSchema";
+import { Event } from "../model/Event";
+import { Snapshot } from "../model/Snapshot";
+import { Journal } from "../model/Journal";
 
 /**
  * Validator for JSON schemas.
@@ -74,6 +77,21 @@ export class SchemaValidator {
   public static validateEventumConfig(config: EventumConfig): ValidatorResult {
     const validator = this.getEventumConfigValidator();
     return validator.validate(config, EventumConfigSchema);
+  }
+
+  public static validateEvent(event: Event): ValidatorResult {
+    const validator = this.getModelValidator();
+    return validator.validate(event, EventSchema);
+  }
+
+  public static validateSnapshot(snapshot: Snapshot): ValidatorResult {
+    const validator = this.getModelValidator();
+    return validator.validate(snapshot, SnapshotSchema);
+  }
+
+  public static validateJournal(journal: Journal): ValidatorResult {
+    const validator = this.getModelValidator();
+    return validator.validate(journal, JournalSchema);
   }
 
   public static validateLambdaGetEventRequest(request: LambdaGetEventRequest): ValidatorResult {

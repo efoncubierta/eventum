@@ -1,6 +1,7 @@
 import * as faker from "faker";
 import { Event } from "../../src/model/Event";
 import { Snapshot } from "../../src/model/Snapshot";
+import { Journal } from "../../src/model/Journal";
 import {
   LambdaGetJournalRequest,
   LambdaGetEventRequest,
@@ -33,13 +34,13 @@ export class TestDataGenerator {
     return {
       eventType: this.randomEventType(),
       aggregateId: aggregateId || this.randomAggregateId(),
-      sequence: sequence || this.randomSequence(),
+      sequence: sequence > 0 ? sequence : this.randomSequence(),
       payload: this.randomPayload()
     };
   }
 
   public static randomEvents(size: number, aggregateId?: string, fromSequence?: number): Event[] {
-    let seedSequence = fromSequence || 0;
+    let seedSequence = fromSequence > 0 ? fromSequence : 1;
     const events: Event[] = [];
     for (let i = 0; i < size; i++, seedSequence++) {
       events.push(this.randomEvent(aggregateId, seedSequence));
@@ -54,18 +55,28 @@ export class TestDataGenerator {
   public static randomSnapshot(aggregateId?: string, sequence?: number): Snapshot {
     return {
       aggregateId: aggregateId || this.randomAggregateId(),
-      sequence: sequence || this.randomSequence(),
+      sequence: sequence > 0 ? sequence : this.randomSequence(),
       payload: this.randomPayload()
     };
   }
 
   public static randomSnapshots(size: number, aggregateId?: string, fromSequence?: number): Snapshot[] {
-    let seedSequence = fromSequence || 0;
+    let seedSequence = fromSequence > 0 ? fromSequence : 0;
     const snapshots: Snapshot[] = [];
     for (let i = 0; i < size; i++, seedSequence++) {
       snapshots.push(this.randomSnapshot(aggregateId, seedSequence));
     }
     return snapshots;
+  }
+
+  public static randomJournal(aggregateId?: string, sequence?: number): Journal {
+    const snapshot = this.randomSnapshot(aggregateId, sequence);
+    const events = this.randomEvents(10, aggregateId, snapshot.sequence + 1);
+    return {
+      aggregateId: aggregateId || this.randomAggregateId(),
+      snapshot,
+      events
+    };
   }
 
   public static randomLambdaGetJournalRequest(aggregateId?: string): LambdaGetJournalRequest {

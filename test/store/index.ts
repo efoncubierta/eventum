@@ -1,12 +1,12 @@
 // tslint:disable:no-unused-expression
 import "mocha";
 
-import awsStoreTest from "./aws";
+import awsStoreTests from "./aws";
 
-function storeTest() {
+function storeTests() {
   describe("Stores", () => {
-    awsStoreTest();
+    awsStoreTests();
   });
 }
 
-export default storeTest;
+export default storeTests;

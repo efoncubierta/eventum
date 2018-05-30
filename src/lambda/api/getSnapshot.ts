@@ -3,28 +3,34 @@ import { APIGatewayEvent, Callback, Context, Handler } from "aws-lambda";
 
 // Eventum dependencies
 import { AggregateService } from "../../service/AggregateService";
-import { HandleLambdaResponse } from "../HandleLambdaResponse";
 import { SchemaValidator } from "../../validation/SchemaValidator";
 import { LambdaGetSnapshotRequest, LambdaGetSnapshotResponse } from "../../message/LambdaMessages";
 
-export const handler: Handler = (request: LambdaGetSnapshotRequest, context: Context, callback: Callback) => {
+// Eventum lambda dependencies
+import { wrapAWSLambdaHandler } from "../wrapper";
+import { EventumLambdaHandler } from "../EventumLambdaHandler";
+import { SnapshotNotFoundError } from "../error/SnapshotNotFoundError";
+import { ValidationError } from "../error/ValidationError";
+
+const getSnapshot: EventumLambdaHandler<LambdaGetSnapshotRequest, LambdaGetSnapshotResponse> = (
+  request: LambdaGetSnapshotRequest
+) => {
   // validate Lambda incoming event
   const validationResult = SchemaValidator.validateLambdaGetSnapshotRequest(request);
   if (validationResult.errors.length > 0) {
-    HandleLambdaResponse.badRequest(callback, validationResult.errors[0].message);
+    return Promise.reject(new ValidationError(validationResult.errors[0].message));
   }
 
-  AggregateService.getSnapshot(request.aggregateId, request.sequence)
-    .then((snapshot) => {
-      if (snapshot) {
-        HandleLambdaResponse.success(callback, {
-          snapshot
-        } as LambdaGetSnapshotResponse);
-      } else {
-        HandleLambdaResponse.notFound(callback, `Snapshot(${request.aggregateId}, ${request.sequence}) not found`);
-      }
-    })
-    .catch((err) => {
-      HandleLambdaResponse.unknown(callback, err.message);
-    });
+  // call getSnapshot() and handle response
+  return AggregateService.getSnapshot(request.aggregateId, request.sequence).then((snapshot) => {
+    if (snapshot) {
+      return {
+        snapshot
+      } as LambdaGetSnapshotResponse;
+    } else {
+      throw new SnapshotNotFoundError(request.aggregateId, request.sequence);
+    }
+  });
 };
+
+export const handler: Handler = wrapAWSLambdaHandler(getSnapshot);

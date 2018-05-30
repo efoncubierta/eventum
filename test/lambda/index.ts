@@ -1,11 +1,12 @@
 // tslint:disable:no-unused-expression
 import "mocha";
-import apiTest from "./api";
 
-function lambdaTest() {
+import apiTests from "./api.test";
+
+function lambdaTests() {
   describe("Lambda Functions", () => {
-    apiTest();
+    apiTests();
   });
 }
 
-export default lambdaTest;
+export default lambdaTests;

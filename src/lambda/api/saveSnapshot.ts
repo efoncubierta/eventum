@@ -5,20 +5,21 @@ import { APIGatewayEvent, Callback, Context, Handler } from "aws-lambda";
 import { SchemaValidator } from "../../validation/SchemaValidator";
 import { LambdaSaveSnapshotRequest } from "../../message/LambdaMessages";
 import { AggregateService } from "../../service/AggregateService";
-import { HandleLambdaResponse } from "../HandleLambdaResponse";
 
-export const handler: Handler = (request: LambdaSaveSnapshotRequest, context: Context, callback: Callback) => {
+// Eventum lambda dependencies
+import { wrapAWSLambdaHandler } from "../wrapper";
+import { EventumLambdaHandler } from "../EventumLambdaHandler";
+import { ValidationError } from "../error/ValidationError";
+
+const saveSnapshot: EventumLambdaHandler<LambdaSaveSnapshotRequest, void> = (request: LambdaSaveSnapshotRequest) => {
   // validate body
   const validationResult = SchemaValidator.validateLambdaSaveSnapshotRequest(request);
   if (validationResult.errors.length > 0) {
-    HandleLambdaResponse.badRequest(callback, validationResult.errors[0].message);
+    return Promise.reject(new ValidationError(validationResult.errors[0].message));
   }
 
-  AggregateService.saveSnapshot(request.aggregateId, request.sequence, request.payload)
-    .then(() => {
-      HandleLambdaResponse.success(callback, {});
-    })
-    .catch((err) => {
-      HandleLambdaResponse.unknown(callback, err.message);
-    });
+  // call saveSnapshot() and handle response
+  return AggregateService.saveSnapshot(request.aggregateId, request.sequence, request.payload);
 };
+
+export const handler: Handler = wrapAWSLambdaHandler(saveSnapshot);

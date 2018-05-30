@@ -83,7 +83,7 @@ export class AWSSnapshotDocumentClientMock implements AWSDocumentClientMock {
     });
 
     callback(null, {
-      UnprocessedItems: unprocessedItems
+      UnprocessedItems: Object.keys(unprocessedItems).length > 0 ? unprocessedItems : null
     });
   }
 }

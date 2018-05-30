@@ -1,12 +1,14 @@
 // tslint:disable:no-unused-expression
 import "mocha";
 
-import lambdaTest from "./lambda";
-import serviceTest from "./service";
-import storeTest from "./store";
+import lambdaTests from "./lambda";
+import serviceTests from "./service";
+import storeTests from "./store";
+import validationTests from "./validation";
 
 describe("Eventum", () => {
-  lambdaTest();
-  serviceTest();
-  storeTest();
+  lambdaTests();
+  serviceTests();
+  storeTests();
+  validationTests();
 });
