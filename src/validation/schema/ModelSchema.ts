@@ -11,12 +11,21 @@ export const SequenceSchema: Schema = {
   minimum: 0
 };
 
+export const DateSchema: Schema = {
+  id: "/Model/Date",
+  type: "string",
+  format: "date-time"
+};
+
 export const EventSchema: Schema = {
   id: "/Model/Event",
   type: "object",
   properties: {
     eventType: {
       type: "string"
+    },
+    occurredAt: {
+      $ref: "/Model/Date"
     },
     aggregateId: {
       $ref: "/Model/AggregateID"
@@ -28,7 +37,7 @@ export const EventSchema: Schema = {
       type: "object"
     }
   },
-  required: ["eventType", "aggregateId", "sequence"]
+  required: ["eventType", "occurredAt", "aggregateId", "sequence"]
 };
 
 export const SnapshotSchema: Schema = {

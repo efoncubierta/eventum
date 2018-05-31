@@ -1,7 +1,14 @@
 import { Schema, Validator, ValidatorResult } from "jsonschema";
 
 // model schemas
-import { AggregateIdSchema, SequenceSchema, EventSchema, SnapshotSchema, JournalSchema } from "./schema/ModelSchema";
+import {
+  AggregateIdSchema,
+  SequenceSchema,
+  DateSchema,
+  EventSchema,
+  SnapshotSchema,
+  JournalSchema
+} from "./schema/ModelSchema";
 
 // REST API schemas
 import {
@@ -44,6 +51,7 @@ export class SchemaValidator {
     const validator = new Validator();
     validator.addSchema(AggregateIdSchema, AggregateIdSchema.id);
     validator.addSchema(SequenceSchema, SequenceSchema.id);
+    validator.addSchema(DateSchema, DateSchema.id);
     validator.addSchema(EventSchema, EventSchema.id);
     validator.addSchema(SnapshotSchema, SnapshotSchema.id);
 

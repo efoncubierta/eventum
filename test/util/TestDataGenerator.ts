@@ -23,6 +23,10 @@ export class TestDataGenerator {
     return faker.random.number(1000);
   }
 
+  public static randomDate(): string {
+    return faker.date.past().toISOString();
+  }
+
   public static randomPayload(): any {
     return {
       prop1: faker.lorem.sentence(),
@@ -33,6 +37,7 @@ export class TestDataGenerator {
   public static randomEvent(aggregateId?: string, sequence?: number): Event {
     return {
       eventType: this.randomEventType(),
+      occurredAt: this.randomDate(),
       aggregateId: aggregateId || this.randomAggregateId(),
       sequence: sequence > 0 ? sequence : this.randomSequence(),
       payload: this.randomPayload()
