@@ -41,6 +41,7 @@ export class AWSSnapshotDocumentClientMock implements AWSDocumentClientMock {
   }
 
   public handlePut(params: PutItemInput, callback: Callback): void {
+    // @ts-ignore
     const snapshot = params.Item as Snapshot;
     InMemorySnapshotStore.putSnapshot(snapshot);
     callback(null, {});
