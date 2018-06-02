@@ -1,14 +1,7 @@
 import * as faker from "faker";
-import { Event } from "../../src/model/Event";
-import { Snapshot } from "../../src/model/Snapshot";
-import { Journal } from "../../src/model/Journal";
-import {
-  LambdaGetJournalRequest,
-  LambdaGetEventRequest,
-  LambdaGetSnapshotRequest,
-  LambdaSaveSnapshotRequest,
-  LambdaSaveEventsRequest
-} from "../../src/message/LambdaMessages";
+import { Event, EventKey, EventInput } from "../../src/model/Event";
+import { Snapshot, SnapshotKey, SnapshotInput } from "../../src/model/Snapshot";
+import { Journal, JournalKey } from "../../src/model/Journal";
 
 export class TestDataGenerator {
   public static randomEventType(): string {
@@ -39,16 +32,39 @@ export class TestDataGenerator {
       eventType: this.randomEventType(),
       occurredAt: this.randomDate(),
       aggregateId: aggregateId || this.randomAggregateId(),
-      sequence: sequence > 0 ? sequence : this.randomSequence(),
+      sequence: sequence && sequence > 0 ? sequence : this.randomSequence(),
       payload: this.randomPayload()
     };
   }
 
-  public static randomEvents(size: number, aggregateId?: string, fromSequence?: number): Event[] {
-    let seedSequence = fromSequence > 0 ? fromSequence : 1;
+  public static randomEventArray(size: number, aggregateId?: string, fromSequence?: number): Event[] {
+    let seedSequence = fromSequence && fromSequence > 0 ? fromSequence : 1;
     const events: Event[] = [];
     for (let i = 0; i < size; i++, seedSequence++) {
       events.push(this.randomEvent(aggregateId, seedSequence));
+    }
+    return events;
+  }
+
+  public static randomEventKey(aggregateId?: string, sequence?: number): EventKey {
+    return {
+      aggregateId: aggregateId || this.randomAggregateId(),
+      sequence: sequence || this.randomSequence()
+    };
+  }
+
+  public static randomEventInput(aggregateId?: string): EventInput {
+    return {
+      eventType: this.randomEventType(),
+      aggregateId: aggregateId || this.randomAggregateId(),
+      payload: this.randomPayload()
+    };
+  }
+
+  public static randomEventInputArray(size: number, aggregateId?: string): EventInput[] {
+    const events: EventInput[] = [];
+    for (let i = 0; i < size; i++) {
+      events.push(this.randomEventInput(aggregateId));
     }
     return events;
   }
@@ -60,13 +76,28 @@ export class TestDataGenerator {
   public static randomSnapshot(aggregateId?: string, sequence?: number): Snapshot {
     return {
       aggregateId: aggregateId || this.randomAggregateId(),
-      sequence: sequence > 0 ? sequence : this.randomSequence(),
+      sequence: sequence && sequence > 0 ? sequence : this.randomSequence(),
+      payload: this.randomPayload()
+    };
+  }
+
+  public static randomSnapshotKey(aggregateId?: string, sequence?: number): SnapshotKey {
+    return {
+      aggregateId: aggregateId || this.randomAggregateId(),
+      sequence: sequence || this.randomSequence()
+    };
+  }
+
+  public static randomSnapshotInput(aggregateId?: string, sequence?: number): SnapshotInput {
+    return {
+      aggregateId: aggregateId || this.randomAggregateId(),
+      sequence: sequence && sequence > 0 ? sequence : this.randomSequence(),
       payload: this.randomPayload()
     };
   }
 
   public static randomSnapshots(size: number, aggregateId?: string, fromSequence?: number): Snapshot[] {
-    let seedSequence = fromSequence > 0 ? fromSequence : 0;
+    let seedSequence = fromSequence && fromSequence > 0 ? fromSequence : 0;
     const snapshots: Snapshot[] = [];
     for (let i = 0; i < size; i++, seedSequence++) {
       snapshots.push(this.randomSnapshot(aggregateId, seedSequence));
@@ -76,7 +107,7 @@ export class TestDataGenerator {
 
   public static randomJournal(aggregateId?: string, sequence?: number): Journal {
     const snapshot = this.randomSnapshot(aggregateId, sequence);
-    const events = this.randomEvents(10, aggregateId, snapshot.sequence + 1);
+    const events = this.randomEventArray(10, aggregateId, snapshot.sequence + 1);
     return {
       aggregateId: aggregateId || this.randomAggregateId(),
       snapshot,
@@ -84,47 +115,9 @@ export class TestDataGenerator {
     };
   }
 
-  public static randomLambdaGetJournalRequest(aggregateId?: string): LambdaGetJournalRequest {
+  public static randomJournalKey(aggregateId?: string): JournalKey {
     return {
       aggregateId: aggregateId || this.randomAggregateId()
-    };
-  }
-
-  public static randomLambdaGetEventRequest(aggregateId?: string, sequence?: number): LambdaGetEventRequest {
-    return {
-      aggregateId: aggregateId || this.randomAggregateId(),
-      sequence: sequence || this.randomSequence()
-    };
-  }
-
-  public static randomLambdaGetSnapshotRequest(aggregateId?: string, sequence?: number): LambdaGetSnapshotRequest {
-    return {
-      aggregateId: aggregateId || this.randomAggregateId(),
-      sequence: sequence || this.randomSequence()
-    };
-  }
-
-  public static randomLambdaSaveSnapshotRequest(aggregateId?: string, sequence?: number): LambdaSaveSnapshotRequest {
-    return {
-      aggregateId: aggregateId || this.randomAggregateId(),
-      sequence: sequence || this.randomSequence(),
-      payload: this.randomPayload()
-    };
-  }
-
-  public static randomLambdaSaveEventsRequest(
-    size: number,
-    aggregateId?: string,
-    fromSequence?: number
-  ): LambdaSaveEventsRequest {
-    let seedSequence = fromSequence || 0;
-    const events: Event[] = [];
-    for (let i = 0; i < size; i++, seedSequence++) {
-      events.push(this.randomEvent(aggregateId, seedSequence));
-    }
-
-    return {
-      events
     };
   }
 }

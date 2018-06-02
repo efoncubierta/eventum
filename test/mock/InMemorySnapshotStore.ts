@@ -1,4 +1,5 @@
 import { Snapshot } from "../../src/model/Snapshot";
+import { Nullable } from "../../src/typings/Nullable";
 
 /**
  * Manage snapshot data in memory.
@@ -12,10 +13,12 @@ export class InMemorySnapshotStore {
    * @param aggregateId Aggregate ID
    * @param sequence Sequence
    */
-  public static getSnapshot(aggregateId: string, sequence: number): Snapshot {
-    return this.snapshots.find((snapshot) => {
-      return snapshot.aggregateId === aggregateId && snapshot.sequence === sequence;
-    });
+  public static getSnapshot(aggregateId: string, sequence: number): Nullable<Snapshot> {
+    return (
+      this.snapshots.find((snapshot) => {
+        return snapshot.aggregateId === aggregateId && snapshot.sequence === sequence;
+      }) || null
+    );
   }
 
   /**

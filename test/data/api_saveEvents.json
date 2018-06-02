@@ -2,23 +2,17 @@
   "events": [
     {
       "eventType": "TestEvent",
-      "occurredAt": "2018-05-31T14:26:00+00:00",
       "aggregateId": "1234",
-      "sequence": 0,
       "payload": { "prop1": "property1 value" }
     },
     {
       "eventType": "TestEvent",
-      "occurredAt": "2018-05-31T14:27:00+00:00",
       "aggregateId": "1234",
-      "sequence": 1,
       "payload": { "prop1": "property1 value" }
     },
     {
       "eventType": "TestEvent",
-      "occurredAt": "2018-05-31T14:28:00+00:00",
       "aggregateId": "1234",
-      "sequence": 2,
       "payload": { "prop1": "property1 value" }
     }
   ]

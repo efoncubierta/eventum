@@ -1,10 +1,20 @@
 import { StoreFactory } from "../store/StoreFactory";
 
+// typings
+import { Nullable } from "../typings/Nullable";
+
 // model
-import { Event } from "../model/Event";
-import { Snapshot } from "../model/Snapshot";
+import { Event, EventInput } from "../model/Event";
+import { Snapshot, SnapshotInput } from "../model/Snapshot";
 import { Journal, JournalBuilder } from "../model/Journal";
+import { AggregateId } from "../model/Common";
+
+// validation
 import { SchemaValidator } from "../validation/SchemaValidator";
+
+interface EventRequestsDic {
+  [x: string]: EventInput[];
+}
 
 /**
  * An aggregate service to manage aggregate data from the user space.
@@ -13,7 +23,7 @@ import { SchemaValidator } from "../validation/SchemaValidator";
  * mechanisms for validating the data, permissions, etc. before they are stored in the database. Also, the journal
  * service is provider agnostic.
  */
-export class AggregateService {
+export class JournalService {
   /**
    * Get an event.
    *
@@ -21,7 +31,7 @@ export class AggregateService {
    * @param sequence Sequence
    * @return Promise with an event, or null if not found
    */
-  public static getEvent(aggregateId: string, sequence: number): Promise<Event> {
+  public static getEvent(aggregateId: string, sequence: number): Promise<Nullable<Event>> {
     return StoreFactory.getEventStore().get(aggregateId, sequence);
   }
 
@@ -36,14 +46,16 @@ export class AggregateService {
    * @param aggregateId Aggregate id
    * @return Promise with a journal, or null if not found
    */
-  public static getJournal(aggregateId: string): Promise<Journal> {
+  public static getJournal(aggregateId: string): Promise<Nullable<Journal>> {
     let journalBuilder = new JournalBuilder().aggregateId(aggregateId);
 
     return StoreFactory.getSnapshotStore()
       .getLatest(aggregateId)
       .then((snapshot) => {
         // update journal builder
-        journalBuilder = journalBuilder.snapshot(snapshot);
+        if (snapshot) {
+          journalBuilder = journalBuilder.snapshot(snapshot);
+        }
 
         // fetch events since last snapshot or the begining
         const fromSequence = snapshot ? snapshot.sequence + 1 : 0;
@@ -65,7 +77,7 @@ export class AggregateService {
    * @param sequence Sequence
    * @return Promise with a snapshot, or null if not found
    */
-  public static getSnapshot(aggregateId: string, sequence: number): Promise<Snapshot> {
+  public static getSnapshot(aggregateId: string, sequence: number): Promise<Nullable<Snapshot>> {
     return StoreFactory.getSnapshotStore().get(aggregateId, sequence);
   }
 
@@ -77,25 +89,27 @@ export class AggregateService {
    * 2. Save snapshot in the store.
    * 3. Purge snapshots.
    *
-   * @param aggregateId Aggregate ID
-   * @param sequence Sequence
-   * @param payload Payload
+   * @param snapshotInput Snapshot input
    */
-  public static saveSnapshot(aggregateId: string, sequence: number, payload: {}): Promise<void> {
+  public static saveSnapshot(snapshotInput: SnapshotInput): Promise<void> {
     return StoreFactory.getEventStore()
-      .get(aggregateId, sequence)
+      .get(snapshotInput.aggregateId, snapshotInput.sequence)
       .then((event) => {
         // event must exist to create the snapshot
         if (!event) {
-          throw new Error(`Event(${aggregateId}, ${sequence}) does not exist. An snapshot cannot be created from it.`);
+          throw new Error(
+            `Event(${snapshotInput.aggregateId}, ${
+              snapshotInput.sequence
+            }) does not exist. An snapshot cannot be created from it.`
+          );
         }
 
         // TODO validate input
 
         const snapshot: Snapshot = {
-          aggregateId,
-          sequence,
-          payload
+          aggregateId: snapshotInput.aggregateId,
+          sequence: snapshotInput.sequence,
+          payload: snapshotInput.payload
         };
 
         // save new snapshot
@@ -103,7 +117,7 @@ export class AggregateService {
       })
       .then(() => {
         // purge old snapshots
-        return StoreFactory.getSnapshotStore().purge(aggregateId);
+        return StoreFactory.getSnapshotStore().purge(snapshotInput.aggregateId);
       });
   }
 
@@ -115,22 +129,19 @@ export class AggregateService {
    * 2. Save all events.
    * 3. Roll event back if any error is reported.
    *
-   * @param events Events
+   * @param eventInputs Event inputs
    */
-  public static saveEvents(events: Event[]): Promise<void> {
+  public static saveEvents(eventInputs: EventInput[]): Promise<Event[]> {
     // reject undefined list of events
-    if (!events) {
-      return Promise.reject(new Error(`(AggregateService) List of events cannot be undefined`));
+    if (!eventInputs) {
+      return Promise.reject(new Error(`(JournalService) List of events cannot be undefined`));
     }
 
     // build a dictionary aggregateId -> Event[]
-    const eventsDic = events
-      .sort((eventA, eventB) => {
-        return eventA.sequence - eventB.sequence;
-      })
-      .reduce((last, current) => {
+    const eventRequestsDic: EventRequestsDic = eventInputs.reduce(
+      (last, current) => {
         // all events must be valid according to the schema
-        const result = SchemaValidator.validateEvent(current);
+        const result = SchemaValidator.validateEventInput(current);
         if (result.errors.length > 0) {
           throw new Error(result.errors[0].message);
         }
@@ -140,36 +151,42 @@ export class AggregateService {
         last[current.aggregateId].push(current);
 
         return last;
-      }, {});
+      },
+      {} as EventRequestsDic
+    );
 
-    // for each aggregateId, get the last event stored and validate that new events are correlated to it
-    const correlationValidationPromises = Object.keys(eventsDic).map((aggregateId) => {
+    // iterate over each aggregateId and correlate its events to the last one created
+    // this operation resolves to Event[][]
+    const correlatedEventsPromises = Object.keys(eventRequestsDic).map((aggregateId) => {
       return StoreFactory.getEventStore()
         .getLast(aggregateId)
         .then((lastEvent) => {
           let nextSequence = lastEvent ? lastEvent.sequence + 1 : 1;
 
-          for (let i = 0; i < eventsDic[aggregateId].length; i++, nextSequence++) {
-            const event = eventsDic[aggregateId][i];
-            if (event.sequence !== nextSequence) {
-              return Promise.reject(
-                new Error(
-                  `Event(${aggregateId}, ${event.sequence}) is not correlated to the latest sequence ${nextSequence -
-                    1}`
-                )
-              );
-            }
-          }
+          return eventRequestsDic[aggregateId].map((eventRequest) => {
+            const now = new Date();
+            return {
+              eventType: eventRequest.eventType,
+              occurredAt: now.toISOString(),
+              aggregateId: eventRequest.aggregateId,
+              sequence: nextSequence++,
+              payload: eventRequest.payload
+            } as Event;
+          });
         });
     });
 
-    return Promise.all(correlationValidationPromises)
-      .then(() => {
+    return Promise.all(correlatedEventsPromises)
+      .then((listOfEvents) => {
+        // flat the list of correlated Event[][] -> Event[]
+        const events = listOfEvents.reduce((last, current) => {
+          return last.concat(current);
+        }, []);
         return StoreFactory.getEventStore().saveBatch(events);
       })
       .then((response) => {
         // TODO handle response
-        return;
+        return response.successItems ? response.successItems : [];
       });
   }
 }

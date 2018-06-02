@@ -1,11 +1,15 @@
+import { Nullable } from "../typings/Nullable";
 import { Snapshot } from "./Snapshot";
 import { Event } from "./Event";
+import { AggregateId } from "./Common";
 
 export interface Journal {
-  aggregateId: string;
-  snapshot?: Snapshot;
+  aggregateId: AggregateId;
+  snapshot: Nullable<Snapshot>;
   events: Event[];
 }
+
+export type JournalKey = Pick<Journal, "aggregateId">;
 
 export class JournalBuilder {
   private j: Journal;

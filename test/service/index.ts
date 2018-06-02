@@ -1,11 +1,11 @@
 // tslint:disable:no-unused-expression
 import "mocha";
 
-import aggregateServiceTest from "./AggregateService.test";
+import journalServiceTests from "./JournalService.test";
 
 function serviceTest() {
   describe("Services", () => {
-    aggregateServiceTest();
+    journalServiceTests();
   });
 }
 

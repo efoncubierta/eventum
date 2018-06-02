@@ -2,35 +2,36 @@
 import { Callback, Context, Handler } from "aws-lambda";
 
 // Eventum dependencies
-import { AggregateService } from "../../service/AggregateService";
+import { JournalService } from "../../service/JournalService";
 import { SchemaValidator } from "../../validation/SchemaValidator";
-import { LambdaGetEventRequest, LambdaGetEventResponse } from "../../message/LambdaMessages";
+
+// Eventum models
+import { Nullable } from "../../typings/Nullable";
+import { Event, EventKey } from "../../model/Event";
 
 // Eventum lambda dependencies
 import { wrapAWSLambdaHandler } from "../wrapper";
-import { EventumLambdaHandler } from "../EventumLambdaHandler";
-import { EventNotFoundError } from "../error/EventNotFoundError";
-import { ValidationError } from "../error/ValidationError";
+import { LambdaHandler } from "../LambdaHandler";
 
-const getEvent: EventumLambdaHandler<LambdaGetEventRequest, LambdaGetEventResponse> = (
-  request: LambdaGetEventRequest
-) => {
+// Eventum errors
+import { EventNotFoundError } from "../../error/EventNotFoundError";
+import { ValidationError } from "../../error/ValidationError";
+
+const getEvent: LambdaHandler<EventKey, Nullable<Event>> = (eventKey: EventKey) => {
   // validate Lambda incoming request
-  const validationResult = SchemaValidator.validateLambdaGetEventRequest(request);
+  const validationResult = SchemaValidator.validateEventKey(eventKey);
   if (validationResult.errors.length > 0) {
     return Promise.reject(new ValidationError(validationResult.errors[0].message));
   }
 
   // call getEvent() and handle response
-  return AggregateService.getEvent(request.aggregateId, request.sequence).then((event) => {
+  return JournalService.getEvent(eventKey.aggregateId, eventKey.sequence).then((event) => {
     if (event) {
-      return {
-        event
-      } as LambdaGetEventResponse;
+      return event;
     } else {
-      throw new EventNotFoundError(request.aggregateId, request.sequence);
+      throw new EventNotFoundError(eventKey.aggregateId, eventKey.sequence);
     }
   });
 };
 
-export const handler: Handler = wrapAWSLambdaHandler(getEvent);
+export const handler = wrapAWSLambdaHandler(getEvent);

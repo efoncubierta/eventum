@@ -1,6 +1,20 @@
+import { AWSError } from "aws-sdk";
 import * as AWS from "aws-sdk-mock";
+import {
+  GetItemInput,
+  PutItemInput,
+  QueryInput,
+  ScanInput,
+  BatchWriteItemInput,
+  GetItemOutput,
+  PutItemOutput,
+  QueryOutput,
+  ScanOutput,
+  BatchWriteItemOutput
+} from "aws-sdk/clients/dynamodb";
+
 import { Eventum } from "../../../../src/Eventum";
-import { AWSDocumentClientMock } from "./AWSDocumentClientMock";
+import { AWSDocumentClientMock, Callback } from "./AWSDocumentClientMock";
 import { AWSEventDocumentClientMock } from "./AWSEventDocumentClientMock";
 import { AWSSnapshotDocumentClientMock } from "./AWSSnapshotDocumentClientMock";
 
@@ -17,13 +31,13 @@ export class AWSDynamoDBMock {
    * @param params DocumentClient.get input parameters
    * @param callback Callback
    */
-  private static documentClientGetMock(params, callback): void {
+  private static documentClientGetMock(params: GetItemInput, callback: Callback): void {
     if (AWSDynamoDBMock.eventDocumentClientMock.canHandleGet(params)) {
       AWSDynamoDBMock.eventDocumentClientMock.handleGet(params, callback);
     } else if (AWSDynamoDBMock.snapshotDocumentClientMock.canHandleGet(params)) {
       AWSDynamoDBMock.snapshotDocumentClientMock.handleGet(params, callback);
     } else {
-      return callback(new Error("This DocumentClient.get() call hasn't been mocked."));
+      return callback(new AWSError("This DocumentClient.get() call hasn't been mocked."));
     }
   }
 
@@ -33,13 +47,13 @@ export class AWSDynamoDBMock {
    * @param params DocumentClient.put() input parameters
    * @param callback Callback
    */
-  private static documentClientPutMock(params, callback): void {
+  private static documentClientPutMock(params: PutItemInput, callback: Callback): void {
     if (AWSDynamoDBMock.eventDocumentClientMock.canHandlePut(params)) {
       AWSDynamoDBMock.eventDocumentClientMock.handlePut(params, callback);
     } else if (AWSDynamoDBMock.snapshotDocumentClientMock.canHandlePut(params)) {
       AWSDynamoDBMock.snapshotDocumentClientMock.handlePut(params, callback);
     } else {
-      return callback(new Error("This DocumentClient.put() call hasn't been mocked."));
+      return callback(new AWSError("This DocumentClient.put() call hasn't been mocked."));
     }
   }
 
@@ -49,13 +63,13 @@ export class AWSDynamoDBMock {
    * @param params DocumentClient.query() input parameters
    * @param callback Callback
    */
-  private static documentClientQueryMock(params, callback): void {
+  private static documentClientQueryMock(params: QueryInput, callback: Callback): void {
     if (AWSDynamoDBMock.eventDocumentClientMock.canHandleQuery(params)) {
       AWSDynamoDBMock.eventDocumentClientMock.handleQuery(params, callback);
     } else if (AWSDynamoDBMock.snapshotDocumentClientMock.canHandleQuery(params)) {
       AWSDynamoDBMock.snapshotDocumentClientMock.handleQuery(params, callback);
     } else {
-      return callback(new Error("This DocumentClient.query() call hasn't been mocked."));
+      return callback(new AWSError("This DocumentClient.query() call hasn't been mocked."));
     }
   }
 
@@ -65,13 +79,13 @@ export class AWSDynamoDBMock {
    * @param params DocumentClient.query() input parameters
    * @param callback Callback
    */
-  private static documentClientScanMock(params, callback): void {
+  private static documentClientScanMock(params: ScanInput, callback: Callback): void {
     if (AWSDynamoDBMock.eventDocumentClientMock.canHandleScan(params)) {
       AWSDynamoDBMock.eventDocumentClientMock.handleScan(params, callback);
     } else if (AWSDynamoDBMock.snapshotDocumentClientMock.canHandleScan(params)) {
       AWSDynamoDBMock.snapshotDocumentClientMock.handleScan(params, callback);
     } else {
-      return callback(new Error("This DocumentClient.scan() call hasn't been mocked."));
+      return callback(new AWSError("This DocumentClient.scan() call hasn't been mocked."));
     }
   }
 
@@ -81,13 +95,13 @@ export class AWSDynamoDBMock {
    * @param params DocumentClient.batchWrite() input parameters
    * @param callback Callback
    */
-  private static documentClientBatchWriteMock(params, callback): void {
+  private static documentClientBatchWriteMock(params: BatchWriteItemInput, callback: Callback): void {
     if (AWSDynamoDBMock.eventDocumentClientMock.canHandleBatchWrite(params)) {
       AWSDynamoDBMock.eventDocumentClientMock.handleBatchWrite(params, callback);
     } else if (AWSDynamoDBMock.snapshotDocumentClientMock.canHandleBatchWrite(params)) {
       AWSDynamoDBMock.snapshotDocumentClientMock.handleBatchWrite(params, callback);
     } else {
-      return callback(new Error("This DocumentClient.batchWrite() call hasn't been mocked."));
+      return callback(new AWSError("This DocumentClient.batchWrite() call hasn't been mocked."));
     }
   }
 

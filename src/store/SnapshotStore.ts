@@ -1,4 +1,5 @@
 import { Snapshot } from "../model/Snapshot";
+import { Nullable } from "../typings/Nullable";
 
 export interface SnapshotStore {
   /**
@@ -7,7 +8,7 @@ export interface SnapshotStore {
    * @param aggregateId Aggregate ID
    * @param sequence Sequence
    */
-  get(aggregateId: string, sequence: number): Promise<Snapshot>;
+  get(aggregateId: string, sequence: number): Promise<Nullable<Snapshot>>;
 
   /**
    * Get current snapshot.
@@ -18,7 +19,7 @@ export interface SnapshotStore {
    *
    * @param aggregateId Aggregate ID
    */
-  getLatest(aggregateId: string): Promise<Snapshot>;
+  getLatest(aggregateId: string): Promise<Nullable<Snapshot>>;
 
   /**
    * Save a snapshot.

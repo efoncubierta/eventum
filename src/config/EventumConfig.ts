@@ -3,12 +3,12 @@ export interface EventumAWSDynamoDBTable {
 }
 
 export interface EventumAWSDynamoDBConfig {
-  events?: EventumAWSDynamoDBTable;
-  snapshots?: EventumAWSDynamoDBTable;
+  events: EventumAWSDynamoDBTable;
+  snapshots: EventumAWSDynamoDBTable;
 }
 
 export interface EventumAWSConfig {
-  dynamodb?: EventumAWSDynamoDBConfig;
+  dynamodb: EventumAWSDynamoDBConfig;
 }
 
 export interface EventumSnapshotRetentionConfig {
@@ -16,7 +16,7 @@ export interface EventumSnapshotRetentionConfig {
 }
 
 export interface EventumSnapshotConfig {
-  retention?: EventumSnapshotRetentionConfig;
+  retention: EventumSnapshotRetentionConfig;
 }
 
 export enum EventumProvider {
@@ -24,20 +24,22 @@ export enum EventumProvider {
 }
 
 export interface EventumConfig {
-  provider?: EventumProvider;
-  aws?: EventumAWSConfig;
-  snapshot?: EventumSnapshotConfig;
+  provider: EventumProvider;
+  stage: string;
+  aws: EventumAWSConfig;
+  snapshot: EventumSnapshotConfig;
 }
 
 export const EventumConfigDefault: EventumConfig = {
   provider: EventumProvider.AWS,
+  stage: "dev",
   aws: {
     dynamodb: {
       events: {
-        tableName: process.env.EVENTS_TABLE_NAME
+        tableName: process.env.EVENTS_TABLE_NAME || "eventum-dev-events"
       },
       snapshots: {
-        tableName: process.env.SNAPSHOTS_TABLE_NAME
+        tableName: process.env.SNAPSHOTS_TABLE_NAME || "eventum-dev-snapshots"
       }
     }
   },

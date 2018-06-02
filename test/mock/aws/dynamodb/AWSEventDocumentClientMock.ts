@@ -1,105 +1,139 @@
-import { AWSDocumentClientMock } from "./AWSDocumentClientMock";
+import { AWSError, DynamoDB } from "aws-sdk";
+import {
+  GetItemInput,
+  PutItemInput,
+  QueryInput,
+  ScanInput,
+  BatchWriteItemInput,
+  GetItemOutput,
+  PutItemOutput,
+  QueryOutput,
+  ScanOutput,
+  BatchWriteItemOutput
+} from "aws-sdk/clients/dynamodb";
+
+import { Event } from "../../../../src/model/Event";
+
+import { AWSDocumentClientMock, Callback } from "./AWSDocumentClientMock";
 import { InMemoryEventStore } from "../../InMemoryEventStore";
 
 export class AWSEventDocumentClientMock implements AWSDocumentClientMock {
   public static TABLE_NAME = "eventum-events-test";
 
-  public canHandleGet(params: any): boolean {
+  public canHandleGet(params: GetItemInput): boolean {
     return params.TableName === AWSEventDocumentClientMock.TABLE_NAME;
   }
 
-  public handleGet(params: any, callback: (error?: Error, response?: any) => void): void {
+  public handleGet(params: GetItemInput, callback: Callback): void {
     // EventDynamoDBStore.getEvent()
-    const aggregateId: string = params.Key.aggregateId;
-    const sequence: number = params.Key.sequence;
+    const aggregateId = params.Key.aggregateId as string;
+    const sequence = params.Key.sequence as number;
+
+    const event = InMemoryEventStore.getEvent(aggregateId, sequence);
+
     callback(null, {
-      Item: InMemoryEventStore.getEvent(aggregateId, sequence)
+      Item: event
     });
   }
 
-  public canHandlePut(params: any): boolean {
+  public canHandlePut(params: PutItemInput): boolean {
     return false;
   }
 
-  public handlePut(params: any, callback: (error?: Error, response?: any) => void): void {
+  public handlePut(params: PutItemInput, callback: Callback): void {
     throw new Error("Method not implemented.");
   }
 
-  public canHandleQuery(params: any): boolean {
+  public canHandleQuery(params: QueryInput): boolean {
     return params.TableName === AWSEventDocumentClientMock.TABLE_NAME;
   }
 
-  public handleQuery(params: any, callback: (error?: Error, response?: any) => void): void {
+  public handleQuery(params: QueryInput, callback: Callback): void {
     if (
       params.KeyConditionExpression === "aggregateId = :aggregateId AND #sequence BETWEEN :fromSequence AND :toSequence"
     ) {
       // EventDynamoDBStore.getEvents()
-      const aggregateId = params.ExpressionAttributeValues[":aggregateId"];
-      const fromSequence = params.ExpressionAttributeValues[":fromSequence"];
-      const toSequence = params.ExpressionAttributeValues[":toSequence"];
+      const aggregateId = params.ExpressionAttributeValues[":aggregateId"] as string;
+      const fromSequence = params.ExpressionAttributeValues[":fromSequence"] as number;
+      const toSequence = params.ExpressionAttributeValues[":toSequence"] as number;
+
+      const events = InMemoryEventStore.getEvents(aggregateId, fromSequence, toSequence);
+
       callback(null, {
-        Items: InMemoryEventStore.getEvents(aggregateId, fromSequence, toSequence)
+        Items: events
       });
     } else if (params.KeyConditionExpression === "aggregateId = :aggregateId") {
       // EventDynamoDBStore.getLastEvent()
-      const aggregateId = params.ExpressionAttributeValues[":aggregateId"];
+      const aggregateId = params.ExpressionAttributeValues[":aggregateId"] as string;
+
+      const events = InMemoryEventStore.getEvents(aggregateId, 0, Number.MAX_SAFE_INTEGER, 1, true);
+
       callback(null, {
-        Items: InMemoryEventStore.getEvents(aggregateId, 0, Number.MAX_SAFE_INTEGER, 1, true)
+        Items: events
       });
     } else if (params.KeyConditionExpression === "aggregateId = :aggregateId AND #sequence >= :sequence") {
       // EventDynamoDBStore.rollBackTo()
-      const aggregateId = params.ExpressionAttributeValues[":aggregateId"];
-      const sequence = params.ExpressionAttributeValues[":sequence"];
+      const aggregateId = params.ExpressionAttributeValues[":aggregateId"] as string;
+      const sequence = params.ExpressionAttributeValues[":sequence"] as number;
+
+      const events = InMemoryEventStore.getEvents(aggregateId, sequence, Number.MAX_SAFE_INTEGER);
+
       callback(null, {
-        Items: InMemoryEventStore.getEvents(aggregateId, sequence, Number.MAX_SAFE_INTEGER)
+        Items: events
       });
     } else if (params.KeyConditionExpression === "aggregateId = :aggregateId AND #sequence <= :sequence") {
       // EventDynamoDBStore.rollForwardTo()
-      const aggregateId = params.ExpressionAttributeValues[":aggregateId"];
-      const sequence = params.ExpressionAttributeValues[":sequence"];
+      const aggregateId = params.ExpressionAttributeValues[":aggregateId"] as string;
+      const sequence = params.ExpressionAttributeValues[":sequence"] as number;
+
+      const events = InMemoryEventStore.getEvents(aggregateId, 0, sequence);
+
       callback(null, {
-        Items: InMemoryEventStore.getEvents(aggregateId, 0, sequence)
+        Items: events
       });
     } else if (params.KeyConditionExpression === "aggregateId = :aggregateId AND #sequence >= :fromSequence") {
       // EventDynamoDBStore.getLastSequence()
-      const aggregateId = params.ExpressionAttributeValues[":aggregateId"];
-      const fromSequence = params.ExpressionAttributeValues[":fromSequence"];
+      const aggregateId = params.ExpressionAttributeValues[":aggregateId"] as string;
+      const fromSequence = params.ExpressionAttributeValues[":fromSequence"] as number;
+
+      const events = InMemoryEventStore.getEvents(aggregateId, fromSequence, Number.MAX_SAFE_INTEGER);
+
       callback(null, {
-        Items: InMemoryEventStore.getEvents(aggregateId, fromSequence, Number.MAX_SAFE_INTEGER)
+        Items: events
       });
     } else {
-      callback(new Error(`Unrecognise request pattern to DocumentClient.query() for table ${params.TableName}`));
+      callback(new AWSError(`Unrecognise request pattern to DocumentClient.query() for table ${params.TableName}`));
     }
   }
 
-  public canHandleScan(params: any): boolean {
+  public canHandleScan(params: ScanInput): boolean {
     return false;
   }
 
-  public handleScan(params: any, callback: (error?: Error, response?: any) => void): boolean {
+  public handleScan(params: ScanInput, callback: Callback): boolean {
     throw new Error("Method not implemented.");
   }
 
-  public canHandleBatchWrite(params: any): boolean {
-    return params.RequestItems[AWSEventDocumentClientMock.TABLE_NAME];
+  public canHandleBatchWrite(params: BatchWriteItemInput): boolean {
+    return params.RequestItems[AWSEventDocumentClientMock.TABLE_NAME] !== undefined;
   }
 
-  public handleBatchWrite(params: any, callback: (error?: Error, response?: any) => void): void {
+  public handleBatchWrite(params: BatchWriteItemInput, callback: Callback): void {
     const unprocessedItems = {};
     const requestItems: any[] = params.RequestItems[AWSEventDocumentClientMock.TABLE_NAME];
 
     requestItems.forEach((requestItem) => {
       if (requestItem.PutRequest) {
-        InMemoryEventStore.putEvent(requestItem.PutRequest.Item);
+        const item = DynamoDB.Converter.unmarshall(requestItem.PutRequest.Item);
+
+        InMemoryEventStore.putEvent(item as Event);
       } else if (requestItem.DeleteRequest) {
-        InMemoryEventStore.deleteEvent(
-          requestItem.DeleteRequest.Key.aggregateId,
-          requestItem.DeleteRequest.Key.sequence
-        );
+        const aggregateId: string = requestItem.DeleteRequest.Key.aggregateId.S;
+        const sequence: number = Number(requestItem.DeleteRequest.Key.sequence.N);
+
+        InMemoryEventStore.deleteEvent(aggregateId, sequence);
       } else {
-        unprocessedItems[AWSEventDocumentClientMock.TABLE_NAME] =
-          unprocessedItems[AWSEventDocumentClientMock.TABLE_NAME] || [];
-        unprocessedItems[AWSEventDocumentClientMock.TABLE_NAME].push(requestItem);
+        console.warn("Ignored RequestItem " + requestItem);
       }
     });
 

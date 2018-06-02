@@ -3,23 +3,27 @@ import { APIGatewayEvent, Callback, Context, Handler } from "aws-lambda";
 
 // Eventum dependencies
 import { SchemaValidator } from "../../validation/SchemaValidator";
-import { LambdaSaveSnapshotRequest } from "../../message/LambdaMessages";
-import { AggregateService } from "../../service/AggregateService";
+import { JournalService } from "../../service/JournalService";
+
+// Eventum models
+import { SnapshotInput } from "../../model/Snapshot";
 
 // Eventum lambda dependencies
 import { wrapAWSLambdaHandler } from "../wrapper";
-import { EventumLambdaHandler } from "../EventumLambdaHandler";
-import { ValidationError } from "../error/ValidationError";
+import { LambdaHandler } from "../LambdaHandler";
 
-const saveSnapshot: EventumLambdaHandler<LambdaSaveSnapshotRequest, void> = (request: LambdaSaveSnapshotRequest) => {
+// Eventum errors
+import { ValidationError } from "../../error/ValidationError";
+
+const saveSnapshot: LambdaHandler<SnapshotInput, void> = (snapshotInput: SnapshotInput) => {
   // validate body
-  const validationResult = SchemaValidator.validateLambdaSaveSnapshotRequest(request);
+  const validationResult = SchemaValidator.validateSnapshotInput(snapshotInput);
   if (validationResult.errors.length > 0) {
     return Promise.reject(new ValidationError(validationResult.errors[0].message));
   }
 
   // call saveSnapshot() and handle response
-  return AggregateService.saveSnapshot(request.aggregateId, request.sequence, request.payload);
+  return JournalService.saveSnapshot(snapshotInput);
 };
 
-export const handler: Handler = wrapAWSLambdaHandler(saveSnapshot);
+export const handler = wrapAWSLambdaHandler(saveSnapshot);

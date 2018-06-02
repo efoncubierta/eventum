@@ -56,7 +56,7 @@ function eventDynamoDBStoreTests() {
       const startSequence = TestDataGenerator.randomSequence();
       const endSequence = startSequence + sampleSize - 1;
       // reverse sequence of events to demonstrate order doesn't matter as long as there is a sequence id
-      const events = TestDataGenerator.randomEvents(sampleSize, aggregateId, startSequence).reverse();
+      const events = TestDataGenerator.randomEventArray(sampleSize, aggregateId, startSequence).reverse();
       const lastEvent = events[0]; // last one is the first one in reversed order
 
       return eventStore
@@ -106,7 +106,7 @@ function eventDynamoDBStoreTests() {
       const startSequence = TestDataGenerator.randomSequence();
       const endSequence = startSequence + sampleSize - 1;
       // reverse sequence of events to demonstrate order doesn't matter as long as there is a sequence id
-      const events = TestDataGenerator.randomEvents(sampleSize, aggregateId, startSequence).reverse();
+      const events = TestDataGenerator.randomEventArray(sampleSize, aggregateId, startSequence).reverse();
       const lastEvent = events[0]; // last one is the first one in reversed order
 
       return eventStore
@@ -140,7 +140,7 @@ function eventDynamoDBStoreTests() {
       const startSequence = 1;
       const endSequence = sampleSize;
       // reverse sequence of events to demonstrate order doesn't matter as long as there is a sequence id
-      const events = TestDataGenerator.randomEvents(sampleSize, aggregateId, startSequence).reverse();
+      const events = TestDataGenerator.randomEventArray(sampleSize, aggregateId, startSequence).reverse();
       const lastEvent = events[rollBackSize]; // last one will be in rollBackSize position after roll-back is performed
 
       return eventStore
@@ -173,7 +173,7 @@ function eventDynamoDBStoreTests() {
       const startSequence = TestDataGenerator.randomSequence();
       const endSequence = startSequence + sampleSize - 1;
       // reverse sequence of events to demonstrate order doesn't matter as long as there is a sequence id
-      const events = TestDataGenerator.randomEvents(sampleSize, aggregateId, startSequence).reverse();
+      const events = TestDataGenerator.randomEventArray(sampleSize, aggregateId, startSequence).reverse();
       const lastEvent = events[0]; // last one is the first one in reversed order
 
       return eventStore

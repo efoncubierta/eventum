@@ -1,6 +1,11 @@
+// typings
+import { Nullable } from "../typings/Nullable";
+
+// models
 import { Event } from "../model/Event";
 
 export interface StoreBatchResponse<T> {
+  successItems?: T[];
   failedItems?: T[];
 }
 
@@ -92,7 +97,7 @@ export interface EventStore {
    * @param aggregateId Aggregate ID
    * @param sequence Sequence
    */
-  get(aggregateId: string, sequence: number): Promise<Event>;
+  get(aggregateId: string, sequence: number): Promise<Nullable<Event>>;
 
   /**
    * Get the last event for a particular aggregate.
@@ -102,7 +107,7 @@ export interface EventStore {
    *
    * @param aggregateId Aggregate ID
    */
-  getLast(aggregateId: string): Promise<Event>;
+  getLast(aggregateId: string): Promise<Nullable<Event>>;
 
   /**
    * Get a range of events for a particular aggregate.

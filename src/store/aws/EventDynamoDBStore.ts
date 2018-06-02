@@ -5,6 +5,7 @@ import { DynamoDBStore } from "./DynamoDBStore";
 import { Eventum } from "../../Eventum";
 import { EventumAWSDynamoDBTable } from "../../config/EventumConfig";
 import { Event } from "../../model/Event";
+import { Nullable } from "../../typings/Nullable";
 
 /**
  * Manage journals in a DynamoDB table.
@@ -23,11 +24,11 @@ export class EventDynamoDBStore extends DynamoDBStore implements EventStore {
     }
 
     // Build the RequestItems request. One PutRequest per event
-    const requestItems = {};
+    const requestItems: BatchWriteItemRequestMap = {};
     requestItems[this.eventsTableConfig.tableName] = events.map((event) => {
       return {
         PutRequest: {
-          Item: event
+          Item: DynamoDB.Converter.marshall(event)
         }
       };
     });
@@ -43,11 +44,11 @@ export class EventDynamoDBStore extends DynamoDBStore implements EventStore {
     }
 
     // Build the RequestItems request. One DeleteRequest per event
-    const requestItems = {};
+    const requestItems: BatchWriteItemRequestMap = {};
     requestItems[this.eventsTableConfig.tableName] = events.map((event) => {
       return {
         DeleteRequest: {
-          Key: event
+          Key: DynamoDB.Converter.marshall(event)
         }
       };
     });
@@ -83,15 +84,15 @@ export class EventDynamoDBStore extends DynamoDBStore implements EventStore {
 
         // no further actions if there are no events to be deleted
         if (events.length === 0) {
-          return null;
+          return;
         }
 
         // Build the RequestItems request. One DeleteRequest per event
-        const requestItems = {};
+        const requestItems: BatchWriteItemRequestMap = {};
         requestItems[this.eventsTableConfig.tableName] = events.map((event) => {
           return {
             DeleteRequest: {
-              Key: event
+              Key: DynamoDB.Converter.marshall(event)
             }
           };
         });
@@ -100,7 +101,7 @@ export class EventDynamoDBStore extends DynamoDBStore implements EventStore {
       })
       .then(() => {
         // TODO handle response?
-        return null;
+        return;
       });
   }
 
@@ -133,24 +134,24 @@ export class EventDynamoDBStore extends DynamoDBStore implements EventStore {
         }
 
         // Build the RequestItems request. One DeleteRequest per event
-        const requestItems = {};
+        const requestItems: BatchWriteItemRequestMap = {};
         requestItems[this.eventsTableConfig.tableName] = events.map((event) => {
           return {
             DeleteRequest: {
-              Key: event
+              Key: DynamoDB.Converter.marshall(event)
             }
           };
         });
 
         return this.retryBatchWrite(requestItems);
       })
-      .then(() => {
+      .then((response) => {
         // TODO handle response?
         return;
       });
   }
 
-  public get(aggregateId: string, sequence: number): Promise<Event> {
+  public get(aggregateId: string, sequence: number): Promise<Nullable<Event>> {
     const documentClient = new DynamoDB.DocumentClient();
 
     return documentClient
@@ -167,7 +168,7 @@ export class EventDynamoDBStore extends DynamoDBStore implements EventStore {
       });
   }
 
-  public getLast(aggregateId: string): Promise<Event> {
+  public getLast(aggregateId: string): Promise<Nullable<Event>> {
     const documentClient = new DynamoDB.DocumentClient();
 
     /**
@@ -186,7 +187,7 @@ export class EventDynamoDBStore extends DynamoDBStore implements EventStore {
       })
       .promise()
       .then((result) => {
-        return result.Items.length > 0 ? (result.Items[0] as Event) : null;
+        return result.Items && result.Items.length > 0 ? (result.Items[0] as Event) : null;
       });
   }
 
@@ -218,7 +219,7 @@ export class EventDynamoDBStore extends DynamoDBStore implements EventStore {
 
   private toEventStoreBatchResponse(
     events: Event[],
-    response: BatchWriteItemRequestMap
+    response: BatchWriteItemRequestMap | undefined
   ): Promise<EventStoreBatchResponse> {
     if (response && response[this.eventsTableConfig.tableName]) {
       const failedKeys = response[this.eventsTableConfig.tableName].map((request) => {
@@ -232,17 +233,30 @@ export class EventDynamoDBStore extends DynamoDBStore implements EventStore {
             aggregateId: request.PutRequest.Item.aggregateId.S,
             sequence: Number(request.PutRequest.Item.sequence.N)
           };
+        } else {
+          // handle error
+          throw Error("Not recognized");
         }
       });
 
       // TODO optimise these nested loops
-      const failedItems: Event[] = events.filter((event) => {
-        return failedKeys.find((keys) => keys.aggregateId === event.aggregateId && keys.sequence === event.sequence);
+      const successItems: Event[] = [];
+      const failedItems: Event[] = [];
+      events.forEach((event) => {
+        const failedEvent = failedKeys.find(
+          (keys) => keys.aggregateId === event.aggregateId && keys.sequence === event.sequence
+        );
+
+        if (failedEvent) {
+          failedItems.push(event);
+        } else {
+          successItems.push(event);
+        }
       });
 
-      return Promise.reject({ failedItems });
+      return Promise.reject({ failedItems, successItems });
     } else {
-      return Promise.resolve({});
+      return Promise.resolve({ successItems: events });
     }
   }
 }

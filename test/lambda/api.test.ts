@@ -17,6 +17,10 @@ import { handler as getSnapshotHandler } from "../../src/lambda/api/getSnapshot"
 import { handler as saveSnapshotHandler } from "../../src/lambda/api/saveSnapshot";
 import { handler as saveEventsHandler } from "../../src/lambda/api/saveEvents";
 
+// lambda response types
+import { SuccessResponseType, ErrorResponseType } from "../../src/lambda/LambdaResponse";
+import { ErrorType } from "../../src/error/ErrorType";
+
 // promisify lambda functions
 const getEventHandlerP = promisify(getEventHandler);
 const getJournalHandlerP = promisify(getJournalHandler);
@@ -43,182 +47,248 @@ function apiTests() {
     it("getEvent() should respond 'BadRequest' for random requests", () => {
       const randomRequest = TestDataGenerator.randomPayload();
 
+      // @ts-ignore
       return getEventHandlerP(randomRequest, null).then((response) => {
         response.should.exist;
-        response.$type.should.exist;
-        response.$type.should.equal("BadRequest");
+        response.type.should.exist;
+        response.type.should.be.equal("ERROR");
+
+        if (response.type === "ERROR") {
+          response.errorType.should.equal(ErrorType.BadRequest);
+        }
       });
     });
 
     it("getEvent() should respond 'NotFound' for a random aggregate and sequence", () => {
       const aggregateId = TestDataGenerator.randomAggregateId();
       const sequence = TestDataGenerator.randomSequence();
-      const getEventRequest = TestDataGenerator.randomLambdaGetEventRequest(aggregateId, sequence);
+      const eventKey = TestDataGenerator.randomEventKey(aggregateId, sequence);
 
-      return getEventHandlerP(getEventRequest, null).then((response) => {
+      // @ts-ignore
+      return getEventHandlerP(eventKey, null).then((response) => {
         response.should.exist;
-        response.$type.should.exist;
-        response.$type.should.equal("NotFound");
+        response.type.should.exist;
+        response.type.should.equal("ERROR");
+
+        if (response.type === "ERROR") {
+          response.errorType.should.equal(ErrorType.NotFound);
+        }
       });
     });
 
     it("getJournal() should respond 'BadRequest' for random requests", () => {
       const randomRequest = TestDataGenerator.randomPayload();
 
+      // @ts-ignore
       return getJournalHandlerP(randomRequest, null).then((response) => {
         response.should.exist;
-        response.$type.should.exist;
-        response.$type.should.equal("BadRequest");
+        response.type.should.exist;
+        response.type.should.equal("ERROR");
+
+        if (response.type === "ERROR") {
+          response.errorType.should.equal(ErrorType.BadRequest);
+        }
       });
     });
 
     it("getSnapshot() should respond 'BadRequest' for random requests", () => {
       const randomRequest = TestDataGenerator.randomPayload();
 
+      // @ts-ignore
       return getSnapshotHandlerP(randomRequest, null).then((response) => {
         response.should.exist;
-        response.$type.should.exist;
-        response.$type.should.equal("BadRequest");
+        response.type.should.exist;
+        response.type.should.equal("ERROR");
+
+        if (response.type === "ERROR") {
+          response.errorType.should.equal(ErrorType.BadRequest);
+        }
       });
     });
 
     it("saveSnapshot() should respond 'BadRequest' for random requests", () => {
       const randomRequest = TestDataGenerator.randomPayload();
 
+      // @ts-ignore
       return saveSnapshotHandlerP(randomRequest, null).then((response) => {
         response.should.exist;
-        response.$type.should.exist;
-        response.$type.should.equal("BadRequest");
+        response.type.should.exist;
+        response.type.should.equal("ERROR");
+
+        if (response.type === "ERROR") {
+          response.errorType.should.equal(ErrorType.BadRequest);
+        }
       });
     });
 
     it("saveEvents() should respond 'BadRequest' for random requests", () => {
       const randomRequest = TestDataGenerator.randomPayload();
 
+      // @ts-ignore
       return saveEventsHandlerP(randomRequest, null).then((response) => {
         response.should.exist;
-        response.$type.should.exist;
-        response.$type.should.equal("BadRequest");
+        response.type.should.exist;
+        response.type.should.equal("ERROR");
+
+        if (response.type === "ERROR") {
+          response.errorType.should.equal(ErrorType.BadRequest);
+        }
       });
     });
 
     it("getJournal() should respond 'NotFound' for a random aggregateId", () => {
       const aggregateId = TestDataGenerator.randomAggregateId();
-      const getJournalRequest = TestDataGenerator.randomLambdaGetJournalRequest(aggregateId);
+      const journalKey = TestDataGenerator.randomJournalKey(aggregateId);
 
-      return getJournalHandlerP(getJournalRequest, null).then((response) => {
+      // @ts-ignore
+      return getJournalHandlerP(journalKey, null).then((response) => {
         response.should.exist;
-        response.$type.should.exist;
-        response.$type.should.equal("NotFound");
+        response.type.should.exist;
+        response.type.should.equal("ERROR");
+
+        if (response.type === "ERROR") {
+          response.errorType.should.equal(ErrorType.NotFound);
+        }
       });
     });
 
     it("getSnapshot() should respond 'NotFound' for a random aggregateId and sequence", () => {
       const aggregateId = TestDataGenerator.randomAggregateId();
       const sequence = TestDataGenerator.randomSequence();
-      const getSnapshotRequest = TestDataGenerator.randomLambdaGetSnapshotRequest(aggregateId, sequence);
+      const snapshotKey = TestDataGenerator.randomSnapshotKey(aggregateId, sequence);
 
-      return getSnapshotHandlerP(getSnapshotRequest, null).then((response) => {
+      // @ts-ignore
+      return getSnapshotHandlerP(snapshotKey, null).then((response) => {
         response.should.exist;
-        response.$type.should.exist;
-        response.$type.should.equal("NotFound");
+        response.type.should.exist;
+        response.type.should.equal("ERROR");
+
+        if (response.type === "ERROR") {
+          response.errorType.should.equal(ErrorType.NotFound);
+        }
       });
     });
 
     it("saveEvents() should save a batch of events", () => {
       const sampleSize = 20;
       const aggregateId = TestDataGenerator.randomAggregateId();
-      const startSequence = 1;
-      const saveEventsRequest = TestDataGenerator.randomLambdaSaveEventsRequest(sampleSize, aggregateId, startSequence);
-      const getEventRequest = TestDataGenerator.randomLambdaGetEventRequest(aggregateId, startSequence);
-      const getJournalRequest = TestDataGenerator.randomLambdaGetJournalRequest(aggregateId);
+      const eventInputs = TestDataGenerator.randomEventInputArray(sampleSize, aggregateId);
+      const eventKey = TestDataGenerator.randomEventKey(aggregateId, 1);
+      const journalKey = TestDataGenerator.randomJournalKey(aggregateId);
 
-      // get the deserialize events for validation
-      const events = saveEventsRequest.events;
+      return (
+        // @ts-ignore
+        saveEventsHandlerP(eventInputs, null)
+          // @ts-ignore
+          .then((response) => {
+            response.should.exist;
+            response.type.should.exist;
+            response.type.should.equal("OK");
 
-      return saveEventsHandlerP(saveEventsRequest, null)
-        .then((response) => {
-          response.should.exist;
-          response.$type.should.exist;
-          response.$type.should.equal("Success");
+            // @ts-ignore
+            return getEventHandlerP(eventKey, null);
+          })
+          // @ts-ignore
+          .then((response) => {
+            response.should.exist;
+            response.type.should.exist;
+            response.type.should.equal("OK");
 
-          return getEventHandlerP(getEventRequest, null);
-        })
-        .then((response) => {
-          response.should.exist;
-          response.$type.should.exist;
-          response.$type.should.equal("Success");
+            if (response.type === "OK") {
+              const event = response.payload;
+              event.should.exist;
+              event.eventType.should.equal(eventInputs[0].eventType);
+              event.aggregateId.should.equal(eventInputs[0].aggregateId);
+              event.payload.should.eql(eventInputs[0].payload);
+            }
 
-          response.event.should.exist;
-          response.event.should.eql(events[0]);
+            // @ts-ignore
+            return getJournalHandlerP(journalKey, null);
+          })
+          // @ts-ignore
+          .then((response) => {
+            response.should.exist;
+            response.type.should.exist;
+            response.type.should.equal("OK");
 
-          return getJournalHandlerP(getJournalRequest, null);
-        })
-        .then((response) => {
-          response.should.exist;
-          response.$type.should.exist;
-          response.$type.should.equal("Success");
-
-          response.journal.should.exist;
-          response.journal.aggregateId.should.equals(aggregateId);
-          response.journal.events.length.should.equals(events.length);
-        });
+            if (response.type === "OK") {
+              const journal = response.payload;
+              journal.should.exist;
+              journal.aggregateId.should.equals(aggregateId);
+              journal.events.length.should.equals(eventInputs.length);
+            }
+          })
+      );
     });
 
     it("saveSnapshot() should save a snapshot and get a valid journal", () => {
       // const retentionCount = Eventum.config().snapshot.retention.count;
       const sampleSize = 20;
       const aggregateId = TestDataGenerator.randomAggregateId();
-      const startSequence = 1;
       const snapshotSequence = sampleSize - 10;
-      const saveEventsRequest = TestDataGenerator.randomLambdaSaveEventsRequest(sampleSize, aggregateId, startSequence);
-      const saveSnapshotRequest = TestDataGenerator.randomLambdaSaveSnapshotRequest(aggregateId, snapshotSequence);
-      const getSnapshotRequest = TestDataGenerator.randomLambdaGetSnapshotRequest(aggregateId, snapshotSequence);
-      const getJournalRequest = TestDataGenerator.randomLambdaGetJournalRequest(aggregateId);
+      const eventInputs = TestDataGenerator.randomEventInputArray(sampleSize, aggregateId);
+      const snapshotInput = TestDataGenerator.randomSnapshotInput(aggregateId, snapshotSequence);
+      const snapshotKey = TestDataGenerator.randomSnapshotKey(aggregateId, snapshotSequence);
+      const journalKey = TestDataGenerator.randomJournalKey(aggregateId);
 
       // deserialize input data for validation
-      const events = saveEventsRequest.events;
-      const payload = saveSnapshotRequest.payload;
+      const payload = snapshotInput.payload;
 
-      return saveEventsHandlerP(saveEventsRequest, null)
-        .then((response) => {
-          response.should.exist;
-          response.$type.should.exist;
-          response.$type.should.equal("Success");
+      return (
+        // @ts-ignore
+        saveEventsHandlerP(eventInputs, null)
+          // @ts-ignore
+          .then((response) => {
+            response.should.exist;
+            response.type.should.exist;
+            response.type.should.equal("OK");
 
-          return saveSnapshotHandlerP(saveSnapshotRequest, null);
-        })
-        .then((response) => {
-          response.should.exist;
-          response.$type.should.exist;
-          response.$type.should.equal("Success");
+            // @ts-ignore
+            return saveSnapshotHandlerP(snapshotInput, null);
+          })
+          // @ts-ignore
+          .then((response) => {
+            response.should.exist;
+            response.type.should.exist;
+            response.type.should.equal("OK");
 
-          return getSnapshotHandlerP(getSnapshotRequest, null);
-        })
-        .then((response) => {
-          response.should.exist;
-          response.$type.should.exist;
-          response.$type.should.equal("Success");
+            // @ts-ignore
+            return getSnapshotHandlerP(snapshotKey, null);
+          })
+          // @ts-ignore
+          .then((response) => {
+            response.should.exist;
+            response.type.should.exist;
+            response.type.should.equal("OK");
 
-          response.snapshot.should.exist;
-          response.snapshot.aggregateId.should.equal(aggregateId);
-          response.snapshot.sequence.should.equal(snapshotSequence);
-          response.snapshot.payload.should.eql(payload);
+            if (response.type === "OK") {
+              const snapshot = response.payload;
+              snapshot.should.exist;
+              snapshot.aggregateId.should.equal(aggregateId);
+              snapshot.sequence.should.equal(snapshotSequence);
+              snapshot.payload.should.eql(payload);
+            }
 
-          return getJournalHandlerP(getJournalRequest, null);
-        })
-        .then((response) => {
-          response.should.exist;
-          response.$type.should.exist;
-          response.$type.should.equal("Success");
+            // @ts-ignore
+            return getJournalHandlerP(journalKey, null);
+          })
+          // @ts-ignore
+          .then((response) => {
+            response.should.exist;
+            response.type.should.exist;
+            response.type.should.equal("OK");
 
-          response.journal.should.exist;
-          response.journal.aggregateId.should.equals(aggregateId);
-          response.journal.snapshot.should.exist;
-          response.journal.snapshot.aggregateId.should.equal(aggregateId);
-          response.journal.snapshot.sequence.should.equal(snapshotSequence);
-          response.journal.events.length.should.equals(10);
-        });
+            if (response.type === "OK") {
+              const journal = response.payload;
+              journal.should.exist;
+              journal.aggregateId.should.equals(aggregateId);
+              journal.snapshot.should.exist;
+              journal.snapshot.aggregateId.should.equal(aggregateId);
+              journal.snapshot.sequence.should.equal(snapshotSequence);
+              journal.events.length.should.equals(10);
+            }
+          })
+      );
     });
   });
 }

@@ -1,84 +1,108 @@
-import { AWSDocumentClientMock } from "./AWSDocumentClientMock";
+import { AWSError, DynamoDB } from "aws-sdk";
+import {
+  GetItemInput,
+  PutItemInput,
+  QueryInput,
+  ScanInput,
+  BatchWriteItemInput,
+  GetItemOutput,
+  PutItemOutput,
+  QueryOutput,
+  ScanOutput,
+  BatchWriteItemOutput
+} from "aws-sdk/clients/dynamodb";
+
+import { Snapshot } from "../../../../src/model/Snapshot";
+
+import { AWSDocumentClientMock, Callback } from "./AWSDocumentClientMock";
 import { InMemorySnapshotStore } from "../../InMemorySnapshotStore";
 
 export class AWSSnapshotDocumentClientMock implements AWSDocumentClientMock {
   public static TABLE_NAME = "eventum-snapshot-test";
 
-  public canHandleGet(params: any): boolean {
+  public canHandleGet(params: GetItemInput): boolean {
     return params.TableName === AWSSnapshotDocumentClientMock.TABLE_NAME;
   }
 
-  public handleGet(params: any, callback: (error?: Error, response?: any) => void): void {
+  public handleGet(params: GetItemInput, callback: Callback): void {
     // SnapshotDynamoDBStore.get()
-    const aggregateId: string = params.Key.aggregateId;
-    const sequence: number = params.Key.sequence;
+    const aggregateId: string = params.Key.aggregateId as string;
+    const sequence: number = params.Key.sequence as number;
+
+    const snapshot = InMemorySnapshotStore.getSnapshot(aggregateId, sequence);
+
     callback(null, {
-      Item: InMemorySnapshotStore.getSnapshot(aggregateId, sequence)
+      Item: snapshot
     });
   }
 
-  public canHandlePut(params: any): boolean {
+  public canHandlePut(params: PutItemInput): boolean {
     return params.TableName === AWSSnapshotDocumentClientMock.TABLE_NAME;
   }
 
-  public handlePut(params: any, callback: (error?: Error, response?: any) => void): void {
-    InMemorySnapshotStore.putSnapshot(params.Item);
+  public handlePut(params: PutItemInput, callback: Callback): void {
+    const snapshot = params.Item as Snapshot;
+    InMemorySnapshotStore.putSnapshot(snapshot);
     callback(null, {});
   }
 
-  public canHandleQuery(params: any): boolean {
+  public canHandleQuery(params: QueryInput): boolean {
     return params.TableName === AWSSnapshotDocumentClientMock.TABLE_NAME;
   }
 
-  public handleQuery(params: any, callback: (error?: Error, response?: any) => void): void {
+  public handleQuery(params: QueryInput, callback: Callback): void {
     if (params.KeyConditionExpression === "aggregateId = :aggregateId" && params.Limit === 1) {
       // SnapshotDynamoDBStore.getLatest()
-      const aggregateId = params.ExpressionAttributeValues[":aggregateId"];
+      const aggregateId = params.ExpressionAttributeValues[":aggregateId"] as string;
+
       const snapshots = InMemorySnapshotStore.getSnapshots(aggregateId);
+
       callback(null, {
         Items: snapshots
       });
     } else if (params.KeyConditionExpression === "aggregateId = :aggregateId") {
       // SnapshotDynamoDBStore.rollForwardTo()
-      const aggregateId = params.ExpressionAttributeValues[":aggregateId"];
-      const sequence = params.ExpressionAttributeValues[":sequence"];
+      const aggregateId = params.ExpressionAttributeValues[":aggregateId"] as string;
+      const sequence = params.ExpressionAttributeValues[":sequence"] as number;
+
       const snapshots = InMemorySnapshotStore.getSnapshots(aggregateId, 0, sequence, false);
+
       callback(null, {
         Items: snapshots
       });
     } else {
-      callback(new Error(`Unrecognise request pattern to DocumentClient.query() for table ${params.TableName}`));
+      callback(new AWSError(`Unrecognise request pattern to DocumentClient.query() for table ${params.TableName}`));
     }
   }
 
-  public canHandleScan(params: any): boolean {
+  public canHandleScan(params: ScanInput): boolean {
     return false;
   }
 
-  public handleScan(params: any, callback: (error?: Error, response?: any) => void): boolean {
+  public handleScan(params: ScanInput, callback: Callback): boolean {
     throw new Error("Method not implemented.");
   }
 
-  public canHandleBatchWrite(params: any): boolean {
-    return params.RequestItems[AWSSnapshotDocumentClientMock.TABLE_NAME];
+  public canHandleBatchWrite(params: BatchWriteItemInput): boolean {
+    return params.RequestItems[AWSSnapshotDocumentClientMock.TABLE_NAME] !== undefined;
   }
 
-  public handleBatchWrite(params: any, callback: (error?: Error, response?: any) => void): void {
+  public handleBatchWrite(params: BatchWriteItemInput, callback: Callback): void {
     const unprocessedItems = {};
     const requestItems: any[] = params.RequestItems[AWSSnapshotDocumentClientMock.TABLE_NAME];
 
     requestItems.forEach((requestItem) => {
       if (requestItem.PutRequest) {
-        InMemorySnapshotStore.putSnapshot(requestItem.PutRequest.Item);
+        const snapshot = DynamoDB.Converter.unmarshall(requestItem.PutRequest.Item);
+
+        InMemorySnapshotStore.putSnapshot(snapshot as Snapshot);
       } else if (requestItem.DeleteRequest) {
-        InMemorySnapshotStore.deleteSnapshot(
-          requestItem.DeleteRequest.Key.aggregateId,
-          requestItem.DeleteRequest.Key.sequence
-        );
+        const aggregateId: string = requestItem.DeleteRequest.Key.aggregateId as string;
+        const sequence: number = requestItem.DeleteRequest.Key.sequence as number;
+
+        InMemorySnapshotStore.deleteSnapshot(aggregateId, sequence);
       } else {
-        unprocessedItems[AWSSnapshotDocumentClientMock.TABLE_NAME] =
-          unprocessedItems[AWSSnapshotDocumentClientMock.TABLE_NAME] || [];
-        unprocessedItems[AWSSnapshotDocumentClientMock.TABLE_NAME].push(requestItem);
+        console.warn("Ignored RequestItem " + requestItem);
       }
     });
 

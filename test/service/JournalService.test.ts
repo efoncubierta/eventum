@@ -10,10 +10,10 @@ import { TestDataGenerator } from "../util/TestDataGenerator";
 import { AWSMock } from "../mock/aws";
 
 // eventum dependencies
-import { AggregateService } from "../../src/service/AggregateService";
+import { JournalService } from "../../src/service/JournalService";
 
-function aggregateServiceTest() {
-  describe("AggregateService", () => {
+function journalServiceTests() {
+  describe("JournalService", () => {
     before(() => {
       // setup chai
       chai.should();
@@ -31,7 +31,7 @@ function aggregateServiceTest() {
     it("getJournal() should return null for a random aggregateId", () => {
       const aggregateId = TestDataGenerator.randomAggregateId();
 
-      return AggregateService.getJournal(aggregateId).then((journal) => {
+      return JournalService.getJournal(aggregateId).then((journal) => {
         chai.should().not.exist(journal);
       });
     });
@@ -39,7 +39,7 @@ function aggregateServiceTest() {
     it("getEvent() should return null for a random aggregateId", () => {
       const aggregateId = TestDataGenerator.randomAggregateId();
 
-      return AggregateService.getEvent(aggregateId, 0).then((event) => {
+      return JournalService.getEvent(aggregateId, 0).then((event) => {
         chai.should().not.exist(event);
       });
     });
@@ -47,54 +47,38 @@ function aggregateServiceTest() {
     it("getSnapshot() should return null for a random aggregateId", () => {
       const aggregateId = TestDataGenerator.randomAggregateId();
 
-      return AggregateService.getSnapshot(aggregateId, 0).then((snapshot) => {
+      return JournalService.getSnapshot(aggregateId, 0).then((snapshot) => {
         chai.should().not.exist(snapshot);
       });
     });
 
     it("saveSnapshot() should reject to save a snapshot from a random event", () => {
-      const aggregateId = TestDataGenerator.randomAggregateId();
-      const sequence = TestDataGenerator.randomSequence();
-      const payload = TestDataGenerator.randomPayload();
+      const snapshotInput = TestDataGenerator.randomSnapshotInput();
 
-      return AggregateService.saveSnapshot(aggregateId, sequence, payload).should.be.rejected;
-    });
-
-    it("saveEvents() should reject undefined list of events", () => {
-      return AggregateService.saveEvents(undefined).should.be.rejected;
-    });
-
-    it("saveEvents() should reject to save events that are not correlated", () => {
-      const sampleSize = 20;
-      const aggregateId = TestDataGenerator.randomAggregateId();
-      const startSequence = 10; // first event should have sequence 1
-      const events = TestDataGenerator.randomEvents(sampleSize, aggregateId, startSequence);
-
-      return AggregateService.saveEvents(events).should.be.rejected;
+      return JournalService.saveSnapshot(snapshotInput).should.be.rejected;
     });
 
     it("saveEvents() should save a sequence of correlated events, save snapshot from one of them and get a valid journal", () => {
       const sampleSize = 20;
       const aggregateId = TestDataGenerator.randomAggregateId();
-      const startSequence = 1;
       const snapshotSequence = sampleSize - 10;
-      const events = TestDataGenerator.randomEvents(sampleSize, aggregateId, startSequence);
-      const payload = TestDataGenerator.randomPayload();
+      const eventInputs = TestDataGenerator.randomEventInputArray(sampleSize, aggregateId);
+      const snapshotInput = TestDataGenerator.randomSnapshotInput(aggregateId, snapshotSequence);
 
-      return AggregateService.saveEvents(events)
+      return JournalService.saveEvents(eventInputs)
         .then(() => {
-          return AggregateService.saveSnapshot(aggregateId, snapshotSequence, payload);
+          return JournalService.saveSnapshot(snapshotInput);
         })
         .then(() => {
-          return AggregateService.getSnapshot(aggregateId, snapshotSequence);
+          return JournalService.getSnapshot(aggregateId, snapshotSequence);
         })
         .then((snapshot) => {
           chai.should().exist(snapshot);
-          snapshot.aggregateId.should.equal(aggregateId);
-          snapshot.sequence.should.equal(snapshotSequence);
-          snapshot.payload.should.eql(payload);
+          snapshot.aggregateId.should.equal(snapshotInput.aggregateId);
+          snapshot.sequence.should.equal(snapshotInput.sequence);
+          snapshot.payload.should.eql(snapshotInput.payload);
 
-          return AggregateService.getJournal(aggregateId);
+          return JournalService.getJournal(aggregateId);
         })
         .then((journal) => {
           chai.should().exist(journal);
@@ -108,7 +92,6 @@ function aggregateServiceTest() {
 
     it("saveEvents() should save a sequence of correlated not sorted events for different aggregates", () => {
       const sampleSize = 10;
-      const startSequence = 1;
 
       const aggregateIds = [
         TestDataGenerator.randomAggregateId(),
@@ -116,17 +99,17 @@ function aggregateServiceTest() {
         TestDataGenerator.randomAggregateId()
       ];
 
-      // build dictionary of events for validation
+      // build dictionary of event inputs for validation
       let events = [];
       const eventsDic = aggregateIds.reduce((last, aggregateId) => {
-        last[aggregateId] = TestDataGenerator.randomEvents(sampleSize, aggregateId, startSequence).reverse();
+        last[aggregateId] = TestDataGenerator.randomEventInputArray(sampleSize, aggregateId).reverse();
         events = events.concat(last[aggregateId]);
         return last;
       }, {});
 
-      return AggregateService.saveEvents(events).then(() => {
+      return JournalService.saveEvents(events).then(() => {
         const promises = aggregateIds.map((aggregateId) => {
-          return AggregateService.getJournal(aggregateId).then((journal) => {
+          return JournalService.getJournal(aggregateId).then((journal) => {
             chai.should().exist(journal);
             journal.aggregateId.should.equals(aggregateId);
             journal.events.length.should.equals(eventsDic[aggregateId].length);
@@ -139,4 +122,4 @@ function aggregateServiceTest() {
   });
 }
 
-export default aggregateServiceTest;
+export default journalServiceTests;

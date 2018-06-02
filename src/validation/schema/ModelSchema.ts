@@ -17,6 +17,11 @@ export const DateSchema: Schema = {
   format: "date-time"
 };
 
+export const EventPayloadSchema: Schema = {
+  id: "/Model/EventPayload",
+  type: "object"
+};
+
 export const EventSchema: Schema = {
   id: "/Model/Event",
   type: "object",
@@ -34,10 +39,57 @@ export const EventSchema: Schema = {
       $ref: "/Model/Sequence"
     },
     payload: {
-      type: "object"
+      $ref: "/Model/EventPayload"
     }
   },
-  required: ["eventType", "occurredAt", "aggregateId", "sequence"]
+  required: ["eventType", "occurredAt", "aggregateId", "sequence"],
+  additionalProperties: false
+};
+
+export const EventKeySchema: Schema = {
+  id: "/Model/EventKey",
+  type: "object",
+  properties: {
+    aggregateId: {
+      $ref: "/Model/AggregateID"
+    },
+    sequence: {
+      $ref: "/Model/Sequence"
+    }
+  },
+  required: ["aggregateId", "sequence"],
+  additionalProperties: false
+};
+
+export const EventInputSchema: Schema = {
+  id: "/Model/EventInput",
+  type: "object",
+  properties: {
+    eventType: {
+      type: "string"
+    },
+    aggregateId: {
+      $ref: "/Model/AggregateID"
+    },
+    payload: {
+      $ref: "/Model/EventPayload"
+    }
+  },
+  required: ["eventType", "aggregateId"],
+  additionalProperties: false
+};
+
+export const EventInputArraySchema: Schema = {
+  id: "/Model/EventInputArray",
+  type: "array",
+  items: {
+    $ref: "/Model/EventInput"
+  }
+};
+
+export const SnapshotPayloadSchema: Schema = {
+  id: "/Model/SnapshotPayload",
+  type: "object"
 };
 
 export const SnapshotSchema: Schema = {
@@ -51,10 +103,43 @@ export const SnapshotSchema: Schema = {
       $ref: "/Model/Sequence"
     },
     payload: {
-      type: "object"
+      $ref: "/Model/SnapshotPayload"
     }
   },
   required: ["aggregateId", "sequence", "payload"]
+};
+
+export const SnapshotKeySchema: Schema = {
+  id: "/Model/SnapshotKey",
+  type: "object",
+  properties: {
+    aggregateId: {
+      $ref: "/Model/AggregateID"
+    },
+    sequence: {
+      $ref: "/Model/Sequence"
+    }
+  },
+  required: ["aggregateId", "sequence"],
+  additionalProperties: false
+};
+
+export const SnapshotInputSchema: Schema = {
+  id: "/Model/SnapshotInput",
+  type: "object",
+  properties: {
+    aggregateId: {
+      $ref: "/Model/AggregateID"
+    },
+    sequence: {
+      $ref: "/Model/Sequence"
+    },
+    payload: {
+      $ref: "/Model/SnapshotPayload"
+    }
+  },
+  required: ["aggregateId", "sequence", "payload"],
+  additionalProperties: false
 };
 
 export const JournalSchema: Schema = {
@@ -75,4 +160,16 @@ export const JournalSchema: Schema = {
     }
   },
   required: ["aggregateId", "snapshot", "events"]
+};
+
+export const JournalKeySchema: Schema = {
+  id: "/Model/JournalKey",
+  type: "object",
+  properties: {
+    aggregateId: {
+      $ref: "/Model/AggregateID"
+    }
+  },
+  required: ["aggregateId"],
+  additionalProperties: false
 };

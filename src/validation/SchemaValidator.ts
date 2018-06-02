@@ -6,18 +6,17 @@ import {
   SequenceSchema,
   DateSchema,
   EventSchema,
+  EventKeySchema,
+  EventInputSchema,
+  EventInputArraySchema,
+  EventPayloadSchema,
   SnapshotSchema,
-  JournalSchema
+  SnapshotKeySchema,
+  SnapshotInputSchema,
+  SnapshotPayloadSchema,
+  JournalSchema,
+  JournalKeySchema
 } from "./schema/ModelSchema";
-
-// REST API schemas
-import {
-  LambdaSaveEventsRequest,
-  LambdaSaveSnapshotRequest,
-  LambdaGetSnapshotRequest,
-  LambdaGetJournalRequest,
-  LambdaGetEventRequest
-} from "../message/LambdaMessages";
 
 // Eventum configuration schemas
 import {
@@ -32,16 +31,9 @@ import {
 import { EventumConfig } from "../config/EventumConfig";
 
 // REST API schema
-import {
-  LambdaGetEventSchema,
-  LambdaGetJournalSchema,
-  LambdaGetSnapshotSchema,
-  LambdaSaveSnapshotSchema,
-  LambdaSaveEventsSchema
-} from "./schema/LambdaSchema";
-import { Event } from "../model/Event";
-import { Snapshot } from "../model/Snapshot";
-import { Journal } from "../model/Journal";
+import { Event, EventKey, EventInput } from "../model/Event";
+import { Snapshot, SnapshotKey, SnapshotInput } from "../model/Snapshot";
+import { Journal, JournalKey } from "../model/Journal";
 
 /**
  * Validator for JSON schemas.
@@ -49,22 +41,24 @@ import { Journal } from "../model/Journal";
 export class SchemaValidator {
   public static getModelValidator(): Validator {
     const validator = new Validator();
+
     validator.addSchema(AggregateIdSchema, AggregateIdSchema.id);
     validator.addSchema(SequenceSchema, SequenceSchema.id);
     validator.addSchema(DateSchema, DateSchema.id);
+
     validator.addSchema(EventSchema, EventSchema.id);
+    validator.addSchema(EventKeySchema, EventKeySchema.id);
+    validator.addSchema(EventInputSchema, EventInputSchema.id);
+    validator.addSchema(EventInputArraySchema, EventInputArraySchema.id);
+    validator.addSchema(EventPayloadSchema, EventPayloadSchema.id);
+
     validator.addSchema(SnapshotSchema, SnapshotSchema.id);
+    validator.addSchema(SnapshotKeySchema, SnapshotKeySchema.id);
+    validator.addSchema(SnapshotInputSchema, SnapshotInputSchema.id);
+    validator.addSchema(SnapshotPayloadSchema, SnapshotPayloadSchema.id);
 
-    return validator;
-  }
-
-  public static getLambdaValidator(): Validator {
-    const validator = this.getModelValidator();
-    validator.addSchema(LambdaGetEventSchema, LambdaGetEventSchema.id);
-    validator.addSchema(LambdaGetJournalSchema, LambdaGetJournalSchema.id);
-    validator.addSchema(LambdaGetSnapshotSchema, LambdaGetSnapshotSchema.id);
-    validator.addSchema(LambdaSaveSnapshotSchema, LambdaSaveSnapshotSchema.id);
-    validator.addSchema(LambdaSaveEventsSchema, LambdaSaveEventsSchema.id);
+    validator.addSchema(JournalSchema, JournalSchema.id);
+    validator.addSchema(JournalKeySchema, JournalKeySchema.id);
 
     return validator;
   }
@@ -92,9 +86,34 @@ export class SchemaValidator {
     return validator.validate(event, EventSchema);
   }
 
+  public static validateEventKey(eventKey: EventKey): ValidatorResult {
+    const validator = this.getModelValidator();
+    return validator.validate(eventKey, EventKeySchema);
+  }
+
+  public static validateEventInput(eventInput: EventInput): ValidatorResult {
+    const validator = this.getModelValidator();
+    return validator.validate(eventInput, EventInputSchema);
+  }
+
+  public static validateEventInputArray(eventInputs: EventInput[]): ValidatorResult {
+    const validator = this.getModelValidator();
+    return validator.validate(eventInputs, EventInputArraySchema);
+  }
+
   public static validateSnapshot(snapshot: Snapshot): ValidatorResult {
     const validator = this.getModelValidator();
     return validator.validate(snapshot, SnapshotSchema);
+  }
+
+  public static validateSnapshotKey(snapshotKey: SnapshotKey): ValidatorResult {
+    const validator = this.getModelValidator();
+    return validator.validate(snapshotKey, SnapshotKeySchema);
+  }
+
+  public static validateSnapshotInput(snapshotInput: SnapshotInput): ValidatorResult {
+    const validator = this.getModelValidator();
+    return validator.validate(snapshotInput, SnapshotInputSchema);
   }
 
   public static validateJournal(journal: Journal): ValidatorResult {
@@ -102,28 +121,8 @@ export class SchemaValidator {
     return validator.validate(journal, JournalSchema);
   }
 
-  public static validateLambdaGetEventRequest(request: LambdaGetEventRequest): ValidatorResult {
-    const validator = this.getLambdaValidator();
-    return validator.validate(request, LambdaGetEventSchema);
-  }
-
-  public static validateLambdaGetJournalRequest(request: LambdaGetJournalRequest): ValidatorResult {
-    const validator = this.getLambdaValidator();
-    return validator.validate(request, LambdaGetJournalSchema);
-  }
-
-  public static validateLambdaGetSnapshotRequest(request: LambdaGetSnapshotRequest): ValidatorResult {
-    const validator = this.getLambdaValidator();
-    return validator.validate(request, LambdaGetSnapshotSchema);
-  }
-
-  public static validateLambdaSaveEventsRequest(request: LambdaSaveEventsRequest): ValidatorResult {
-    const validator = this.getLambdaValidator();
-    return validator.validate(request, LambdaSaveEventsSchema);
-  }
-
-  public static validateLambdaSaveSnapshotRequest(request: LambdaSaveSnapshotRequest): ValidatorResult {
-    const validator = this.getLambdaValidator();
-    return validator.validate(request, LambdaSaveSnapshotSchema);
+  public static validateJournalKey(journalKey: JournalKey): ValidatorResult {
+    const validator = this.getModelValidator();
+    return validator.validate(journalKey, JournalKeySchema);
   }
 }

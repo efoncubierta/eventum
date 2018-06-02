@@ -1,4 +1,5 @@
 import { Event } from "../../src/model/Event";
+import { Nullable } from "../../src/typings/Nullable";
 
 /**
  * Manage journal data in memory.
@@ -36,10 +37,12 @@ export class InMemoryEventStore {
    * @param sequence Sequence
    * @return Event object or null if it doesn't exist
    */
-  public static getEvent(aggregateId: string, sequence: number): Event {
-    return this.events.find((event) => {
-      return event.aggregateId === aggregateId && event.sequence === sequence;
-    });
+  public static getEvent(aggregateId: string, sequence: number): Nullable<Event> {
+    return (
+      this.events.find((event) => {
+        return event.aggregateId === aggregateId && event.sequence === sequence;
+      }) || null
+    );
   }
 
   /**

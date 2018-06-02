@@ -1,20 +1,16 @@
 // external dependencies
 import { Callback, Context, Handler } from "aws-lambda";
 
-// eventum lambda dependencies
-import { EventumLambdaHandler } from "./EventumLambdaHandler";
+// Eventum lambda dependencies
+import { LambdaResponse, SuccessResponse, ErrorResponse } from "./LambdaResponse";
+import { LambdaHandler } from "./LambdaHandler";
 
-// eventum lambda errors
-import { EventNotFoundError } from "./error/EventNotFoundError";
-import { JournalNotFoundError } from "./error/JournalNotFoundError";
-import { SnapshotNotFoundError } from "./error/SnapshotNotFoundError";
-import { NotFoundError } from "./error/NotFoundError";
-import { ValidationError } from "./error/ValidationError";
-import { BadRequestError } from "./error/BadRequestError";
-import { LambdaError } from "./error/LambdaError";
+// Eventum errors
+import { EventumError } from "../error/EventumError";
+import { ErrorType } from "../error/ErrorType";
 
-export function wrapAWSLambdaHandler(handler: EventumLambdaHandler<any, any>): Handler {
-  return (event, context: Context, callback: Callback) => {
+export function wrapAWSLambdaHandler<I, O>(handler: LambdaHandler<I, O>): Handler<I, LambdaResponse<O>> {
+  return (event: I, context: Context, callback: Callback<LambdaResponse<O>>) => {
     // invoke function
     handler(event)
       .then((result) => {
@@ -23,29 +19,26 @@ export function wrapAWSLambdaHandler(handler: EventumLambdaHandler<any, any>): H
       })
       .catch((err) => {
         // handle lambda predefined errors
-        if (err instanceof LambdaError) {
+        if (err instanceof EventumError) {
           handleErrorResponse(callback, err.errorType, err.message);
         } else {
-          handleErrorResponse(callback, "Unknown", err.message);
+          handleErrorResponse(callback, ErrorType.Unknown, err.message);
         }
       });
   };
 }
 
-function handleResponse(callback: Callback, responseType: string, responsePayload: any) {
+function handleSuccessResponse<O>(callback: Callback<SuccessResponse<O>>, payload: O) {
   callback(null, {
-    $type: responseType,
-    ...responsePayload
+    type: "OK",
+    payload
   });
 }
 
-function handleSuccessResponse(callback: Callback, payload: any) {
-  handleResponse(callback, "Success", payload);
-}
-
-function handleErrorResponse(callback: Callback, type: string, message: string, payload?: any) {
-  handleResponse(callback, type, {
-    message,
-    payload
+function handleErrorResponse(callback: Callback<ErrorResponse>, errorType: ErrorType, message: string) {
+  callback(null, {
+    type: "ERROR",
+    errorType,
+    message
   });
 }

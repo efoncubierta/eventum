@@ -1,5 +1,7 @@
 {
-  "aggregateId": "1234",
-  "sequence": 1,
-  "payload": { "stateType": "Active", "payload": { "prop1": "property1 value" } }
+  "snapshot": {
+    "aggregateId": "1234",
+    "sequence": 1,
+    "payload": { "stateType": "Active", "payload": { "prop1": "property1 value" } }
+  }
 }

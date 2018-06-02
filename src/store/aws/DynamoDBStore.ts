@@ -1,6 +1,10 @@
+// external dependencies
 import { DynamoDB } from "aws-sdk";
-import { BatchWriteItemRequestMap, BatchWriteItemOutput } from "aws-sdk/clients/dynamodb";
 import { operation as retryOperation } from "retry";
+import { BatchWriteItemRequestMap, BatchWriteItemOutput } from "aws-sdk/clients/dynamodb";
+
+// typings
+import { Nullable } from "../../typings/Nullable";
 
 /**
  * Utility class for DynamoDB based stores.
@@ -11,7 +15,7 @@ export abstract class DynamoDBStore {
    *
    * @param requestItems Request items
    */
-  protected retryBatchWrite(requestItems: BatchWriteItemRequestMap): Promise<BatchWriteItemRequestMap> {
+  protected retryBatchWrite(requestItems: BatchWriteItemRequestMap): Promise<BatchWriteItemRequestMap | undefined> {
     const documentClient = new DynamoDB.DocumentClient();
 
     // TODO make this configurable via Eventum.config()
@@ -37,7 +41,7 @@ export abstract class DynamoDBStore {
               // retry?
               // update list of unprocessed items
               unprocessedItems = result.UnprocessedItems;
-              return;
+              return unprocessedItems;
             } else {
               resolve(result.UnprocessedItems);
             }

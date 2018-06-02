@@ -4,6 +4,8 @@ import { DynamoDBStore } from "./DynamoDBStore";
 import { Eventum } from "../../Eventum";
 import { EventumAWSDynamoDBTable, EventumSnapshotConfig } from "../../config/EventumConfig";
 import { Snapshot } from "../../model/Snapshot";
+import { Nullable } from "../../typings/Nullable";
+import { BatchWriteItemRequestMap } from "aws-sdk/clients/dynamodb";
 
 /**
  * Manage snapshots in a DynamoDB table.
@@ -35,7 +37,7 @@ export class SnapshotDynamoDBStore extends DynamoDBStore implements SnapshotStor
       });
   }
 
-  public getLatest(aggregateId: string): Promise<Snapshot> {
+  public getLatest(aggregateId: string): Promise<Nullable<Snapshot>> {
     const documentClient = new DynamoDB.DocumentClient();
 
     return documentClient
@@ -50,7 +52,7 @@ export class SnapshotDynamoDBStore extends DynamoDBStore implements SnapshotStor
       })
       .promise()
       .then((result) => {
-        return result.Items.length > 0 ? (result.Items[0] as Snapshot) : null;
+        return result.Items && result.Items.length > 0 ? (result.Items[0] as Snapshot) : null;
       });
   }
 
@@ -87,7 +89,7 @@ export class SnapshotDynamoDBStore extends DynamoDBStore implements SnapshotStor
       .then((result) => {
         return result.Items as Snapshot[];
       })
-      .then((snapshots: Snapshot[]) => {
+      .then((snapshots) => {
         const delta = snapshots.length - this.snapshotConfig.retention.count;
 
         if (delta <= 0) {
@@ -119,21 +121,21 @@ export class SnapshotDynamoDBStore extends DynamoDBStore implements SnapshotStor
         *   }]
         * }
         */
-        const requestItems = {};
+        const requestItems: BatchWriteItemRequestMap = {};
         requestItems[this.snapshotsTableConfig.tableName] = snapshots.map((event) => {
           return {
             DeleteRequest: {
-              Key: {
+              Key: DynamoDB.Converter.marshall({
                 aggregateId: event.aggregateId,
                 sequence: event.sequence
-              }
+              })
             }
           };
         });
 
         return this.retryBatchWrite(requestItems).then((result) => {
           // ignore unprocessed items. They'll get deleted in the next iteration
-          return null;
+          return;
         });
       });
   }
