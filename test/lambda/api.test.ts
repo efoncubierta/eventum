@@ -18,7 +18,7 @@ import { handler as saveSnapshotHandler } from "../../src/lambda/api/saveSnapsho
 import { handler as saveEventsHandler } from "../../src/lambda/api/saveEvents";
 
 // lambda response types
-import { SuccessResponseType, ErrorResponseType } from "../../src/lambda/LambdaResponse";
+import { ResponseType } from "../../src/lambda/ResponseType";
 import { ErrorType } from "../../src/error/ErrorType";
 
 // promisify lambda functions
@@ -51,9 +51,9 @@ function apiTests() {
       return getEventHandlerP(randomRequest, null).then((response) => {
         response.should.exist;
         response.type.should.exist;
-        response.type.should.be.equal("ERROR");
+        response.type.should.be.equal(ResponseType.ERROR);
 
-        if (response.type === "ERROR") {
+        if (response.type === ResponseType.ERROR) {
           response.errorType.should.equal(ErrorType.BadRequest);
         }
       });
@@ -68,9 +68,9 @@ function apiTests() {
       return getEventHandlerP(eventKey, null).then((response) => {
         response.should.exist;
         response.type.should.exist;
-        response.type.should.equal("ERROR");
+        response.type.should.equal(ResponseType.ERROR);
 
-        if (response.type === "ERROR") {
+        if (response.type === ResponseType.ERROR) {
           response.errorType.should.equal(ErrorType.NotFound);
         }
       });
@@ -83,9 +83,9 @@ function apiTests() {
       return getJournalHandlerP(randomRequest, null).then((response) => {
         response.should.exist;
         response.type.should.exist;
-        response.type.should.equal("ERROR");
+        response.type.should.equal(ResponseType.ERROR);
 
-        if (response.type === "ERROR") {
+        if (response.type === ResponseType.ERROR) {
           response.errorType.should.equal(ErrorType.BadRequest);
         }
       });
@@ -98,9 +98,9 @@ function apiTests() {
       return getSnapshotHandlerP(randomRequest, null).then((response) => {
         response.should.exist;
         response.type.should.exist;
-        response.type.should.equal("ERROR");
+        response.type.should.equal(ResponseType.ERROR);
 
-        if (response.type === "ERROR") {
+        if (response.type === ResponseType.ERROR) {
           response.errorType.should.equal(ErrorType.BadRequest);
         }
       });
@@ -113,9 +113,9 @@ function apiTests() {
       return saveSnapshotHandlerP(randomRequest, null).then((response) => {
         response.should.exist;
         response.type.should.exist;
-        response.type.should.equal("ERROR");
+        response.type.should.equal(ResponseType.ERROR);
 
-        if (response.type === "ERROR") {
+        if (response.type === ResponseType.ERROR) {
           response.errorType.should.equal(ErrorType.BadRequest);
         }
       });
@@ -128,9 +128,9 @@ function apiTests() {
       return saveEventsHandlerP(randomRequest, null).then((response) => {
         response.should.exist;
         response.type.should.exist;
-        response.type.should.equal("ERROR");
+        response.type.should.equal(ResponseType.ERROR);
 
-        if (response.type === "ERROR") {
+        if (response.type === ResponseType.ERROR) {
           response.errorType.should.equal(ErrorType.BadRequest);
         }
       });
@@ -144,9 +144,9 @@ function apiTests() {
       return getJournalHandlerP(journalKey, null).then((response) => {
         response.should.exist;
         response.type.should.exist;
-        response.type.should.equal("ERROR");
+        response.type.should.equal(ResponseType.ERROR);
 
-        if (response.type === "ERROR") {
+        if (response.type === ResponseType.ERROR) {
           response.errorType.should.equal(ErrorType.NotFound);
         }
       });
@@ -161,9 +161,9 @@ function apiTests() {
       return getSnapshotHandlerP(snapshotKey, null).then((response) => {
         response.should.exist;
         response.type.should.exist;
-        response.type.should.equal("ERROR");
+        response.type.should.equal(ResponseType.ERROR);
 
-        if (response.type === "ERROR") {
+        if (response.type === ResponseType.ERROR) {
           response.errorType.should.equal(ErrorType.NotFound);
         }
       });
@@ -183,7 +183,7 @@ function apiTests() {
           .then((response) => {
             response.should.exist;
             response.type.should.exist;
-            response.type.should.equal("OK");
+            response.type.should.equal(ResponseType.OK);
 
             // @ts-ignore
             return getEventHandlerP(eventKey, null);
@@ -192,9 +192,9 @@ function apiTests() {
           .then((response) => {
             response.should.exist;
             response.type.should.exist;
-            response.type.should.equal("OK");
+            response.type.should.equal(ResponseType.OK);
 
-            if (response.type === "OK") {
+            if (response.type === ResponseType.OK) {
               const event = response.payload;
               event.should.exist;
               event.eventType.should.equal(eventInputs[0].eventType);
@@ -209,9 +209,9 @@ function apiTests() {
           .then((response) => {
             response.should.exist;
             response.type.should.exist;
-            response.type.should.equal("OK");
+            response.type.should.equal(ResponseType.OK);
 
-            if (response.type === "OK") {
+            if (response.type === ResponseType.OK) {
               const journal = response.payload;
               journal.should.exist;
               journal.aggregateId.should.equals(aggregateId);
@@ -241,7 +241,7 @@ function apiTests() {
           .then((response) => {
             response.should.exist;
             response.type.should.exist;
-            response.type.should.equal("OK");
+            response.type.should.equal(ResponseType.OK);
 
             // @ts-ignore
             return saveSnapshotHandlerP(snapshotInput, null);
@@ -250,7 +250,7 @@ function apiTests() {
           .then((response) => {
             response.should.exist;
             response.type.should.exist;
-            response.type.should.equal("OK");
+            response.type.should.equal(ResponseType.OK);
 
             // @ts-ignore
             return getSnapshotHandlerP(snapshotKey, null);
@@ -259,9 +259,9 @@ function apiTests() {
           .then((response) => {
             response.should.exist;
             response.type.should.exist;
-            response.type.should.equal("OK");
+            response.type.should.equal(ResponseType.OK);
 
-            if (response.type === "OK") {
+            if (response.type === ResponseType.OK) {
               const snapshot = response.payload;
               snapshot.should.exist;
               snapshot.aggregateId.should.equal(aggregateId);
@@ -276,9 +276,9 @@ function apiTests() {
           .then((response) => {
             response.should.exist;
             response.type.should.exist;
-            response.type.should.equal("OK");
+            response.type.should.equal(ResponseType.OK);
 
-            if (response.type === "OK") {
+            if (response.type === ResponseType.OK) {
               const journal = response.payload;
               journal.should.exist;
               journal.aggregateId.should.equals(aggregateId);

@@ -2,12 +2,15 @@
 import { Callback, Context, Handler } from "aws-lambda";
 
 // Eventum lambda dependencies
-import { LambdaResponse, SuccessResponse, ErrorResponse } from "./LambdaResponse";
+import { LambdaResponse } from "./LambdaResponse";
+import { SuccessResponse } from "./SuccessResponse";
+import { ErrorResponse } from "./ErrorResponse";
 import { LambdaHandler } from "./LambdaHandler";
 
 // Eventum errors
 import { EventumError } from "../error/EventumError";
 import { ErrorType } from "../error/ErrorType";
+import { ResponseType } from "./ResponseType";
 
 export function wrapAWSLambdaHandler<I, O>(handler: LambdaHandler<I, O>): Handler<I, LambdaResponse<O>> {
   return (event: I, context: Context, callback: Callback<LambdaResponse<O>>) => {
@@ -30,14 +33,14 @@ export function wrapAWSLambdaHandler<I, O>(handler: LambdaHandler<I, O>): Handle
 
 function handleSuccessResponse<O>(callback: Callback<SuccessResponse<O>>, payload: O) {
   callback(null, {
-    type: "OK",
+    type: ResponseType.OK,
     payload
   });
 }
 
 function handleErrorResponse(callback: Callback<ErrorResponse>, errorType: ErrorType, message: string) {
   callback(null, {
-    type: "ERROR",
+    type: ResponseType.ERROR,
     errorType,
     message
   });
