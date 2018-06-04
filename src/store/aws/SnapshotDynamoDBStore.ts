@@ -1,11 +1,18 @@
+// External dependencies
 import { DynamoDB } from "aws-sdk";
-import { SnapshotStore } from "../SnapshotStore";
-import { DynamoDBStore } from "./DynamoDBStore";
+import { BatchWriteItemRequestMap } from "aws-sdk/clients/dynamodb";
+import { Option, some, none } from "fp-ts/lib/Option";
+
+// Eventum configuration
 import { Eventum } from "../../Eventum";
 import { EventumAWSDynamoDBTable, EventumSnapshotConfig } from "../../config/EventumConfig";
-import { Snapshot } from "../../model/Snapshot";
-import { Nullable } from "../../typings/Nullable";
-import { BatchWriteItemRequestMap } from "aws-sdk/clients/dynamodb";
+
+// Eventum stores
+import { DynamoDBStore } from "./DynamoDBStore";
+import { SnapshotStore } from "../SnapshotStore";
+
+// Eventum models
+import { Snapshot, SnapshotKey } from "../../model/Snapshot";
 
 /**
  * Manage snapshots in a DynamoDB table.
@@ -20,24 +27,21 @@ export class SnapshotDynamoDBStore extends DynamoDBStore implements SnapshotStor
     this.snapshotConfig = Eventum.config().snapshot;
   }
 
-  public get(aggregateId: string, sequence: number): Promise<Snapshot> {
+  public get(snapshotKey: SnapshotKey): Promise<Option<Snapshot>> {
     const documentClient = new DynamoDB.DocumentClient();
 
     return documentClient
       .get({
         TableName: this.snapshotsTableConfig.tableName,
-        Key: {
-          aggregateId,
-          sequence
-        }
+        Key: snapshotKey
       })
       .promise()
-      .then((result) => {
-        return result.Item as Snapshot;
+      .then((dbResult) => {
+        return dbResult.Item ? some(dbResult.Item as Snapshot) : none;
       });
   }
 
-  public getLatest(aggregateId: string): Promise<Nullable<Snapshot>> {
+  public getLatest(aggregateId: string): Promise<Option<Snapshot>> {
     const documentClient = new DynamoDB.DocumentClient();
 
     return documentClient
@@ -51,8 +55,8 @@ export class SnapshotDynamoDBStore extends DynamoDBStore implements SnapshotStor
         Limit: 1
       })
       .promise()
-      .then((result) => {
-        return result.Items && result.Items.length > 0 ? (result.Items[0] as Snapshot) : null;
+      .then((dbResult) => {
+        return dbResult.Items && dbResult.Items.length > 0 ? some(dbResult.Items[0] as Snapshot) : none;
       });
   }
 
@@ -65,7 +69,7 @@ export class SnapshotDynamoDBStore extends DynamoDBStore implements SnapshotStor
         Item: snapshot
       })
       .promise()
-      .then(() => {
+      .then((dbResult) => {
         return;
       });
   }
@@ -86,11 +90,9 @@ export class SnapshotDynamoDBStore extends DynamoDBStore implements SnapshotStor
         }
       })
       .promise()
-      .then((result) => {
-        return result.Items as Snapshot[];
-      })
-      .then((snapshots) => {
-        const delta = snapshots.length - this.snapshotConfig.retention.count;
+      .then((dbResult) => {
+        const allSnapshots = dbResult.Items as Snapshot[];
+        const delta = allSnapshots.length - this.snapshotConfig.retention.count;
 
         if (delta <= 0) {
           // no snapshots to be deleted
@@ -98,7 +100,7 @@ export class SnapshotDynamoDBStore extends DynamoDBStore implements SnapshotStor
         }
 
         // filter out snapshots that don't need to be deleted
-        snapshots = snapshots.slice(0, delta);
+        const snapshots = allSnapshots.slice(0, delta);
 
         /*
         * Build the following data structure:
@@ -122,13 +124,14 @@ export class SnapshotDynamoDBStore extends DynamoDBStore implements SnapshotStor
         * }
         */
         const requestItems: BatchWriteItemRequestMap = {};
-        requestItems[this.snapshotsTableConfig.tableName] = snapshots.map((event) => {
+        // @ts-ignore
+        requestItems[this.snapshotsTableConfig.tableName] = snapshots.map((snapshot) => {
           return {
             DeleteRequest: {
-              Key: DynamoDB.Converter.marshall({
-                aggregateId: event.aggregateId,
-                sequence: event.sequence
-              })
+              Key: {
+                aggregateId: snapshot.aggregateId,
+                sequence: snapshot.sequence
+              }
             }
           };
         });

@@ -1,12 +1,13 @@
-import { Nullable } from "../typings/Nullable";
 import { AggregateId, Sequence } from "./Common";
 
+export type SnapshotId = string;
 export type SnapshotPayload = any;
 
 export interface Snapshot {
+  snapshotId: SnapshotId;
   aggregateId: AggregateId;
   sequence: Sequence;
-  payload: Nullable<SnapshotPayload>;
+  payload: SnapshotPayload;
 }
 
 export type SnapshotKey = Pick<Snapshot, "aggregateId" | "sequence">;

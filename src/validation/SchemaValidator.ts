@@ -5,11 +5,13 @@ import {
   AggregateIdSchema,
   SequenceSchema,
   DateSchema,
+  EventIdSchema,
   EventSchema,
   EventKeySchema,
   EventInputSchema,
   EventInputArraySchema,
   EventPayloadSchema,
+  SnapshotIdSchema,
   SnapshotSchema,
   SnapshotKeySchema,
   SnapshotInputSchema,
@@ -47,12 +49,14 @@ export class SchemaValidator {
     validator.addSchema(DateSchema, DateSchema.id);
 
     validator.addSchema(EventSchema, EventSchema.id);
+    validator.addSchema(EventIdSchema, EventIdSchema.id);
     validator.addSchema(EventKeySchema, EventKeySchema.id);
     validator.addSchema(EventInputSchema, EventInputSchema.id);
     validator.addSchema(EventInputArraySchema, EventInputArraySchema.id);
     validator.addSchema(EventPayloadSchema, EventPayloadSchema.id);
 
     validator.addSchema(SnapshotSchema, SnapshotSchema.id);
+    validator.addSchema(SnapshotIdSchema, SnapshotIdSchema.id);
     validator.addSchema(SnapshotKeySchema, SnapshotKeySchema.id);
     validator.addSchema(SnapshotInputSchema, SnapshotInputSchema.id);
     validator.addSchema(SnapshotPayloadSchema, SnapshotPayloadSchema.id);

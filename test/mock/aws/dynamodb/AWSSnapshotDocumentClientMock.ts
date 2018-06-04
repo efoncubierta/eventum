@@ -94,12 +94,12 @@ export class AWSSnapshotDocumentClientMock implements AWSDocumentClientMock {
 
     requestItems.forEach((requestItem) => {
       if (requestItem.PutRequest) {
-        const snapshot = DynamoDB.Converter.unmarshall(requestItem.PutRequest.Item);
+        const snapshot = requestItem.PutRequest.Item as Snapshot;
 
-        InMemorySnapshotStore.putSnapshot(snapshot as Snapshot);
+        InMemorySnapshotStore.putSnapshot(snapshot);
       } else if (requestItem.DeleteRequest) {
-        const aggregateId: string = requestItem.DeleteRequest.Key.aggregateId as string;
-        const sequence: number = requestItem.DeleteRequest.Key.sequence as number;
+        const aggregateId: string = requestItem.DeleteRequest.Key.aggregateId;
+        const sequence: number = requestItem.DeleteRequest.Key.sequence;
 
         InMemorySnapshotStore.deleteSnapshot(aggregateId, sequence);
       } else {

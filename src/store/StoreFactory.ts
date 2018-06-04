@@ -1,9 +1,15 @@
+// Eventum configuration
 import { Eventum } from "../Eventum";
 import { EventumProvider } from "../config/EventumConfig";
+
+// Eventum stores
 import { EventStore } from "./EventStore";
 import { SnapshotStore } from "./SnapshotStore";
 import { EventDynamoDBStore } from "./aws/EventDynamoDBStore";
 import { SnapshotDynamoDBStore } from "./aws/SnapshotDynamoDBStore";
+
+// Eventum errors
+import { EventumError } from "../error/EventumError";
 
 /**
  * Create {@link EventStore} and {@link SnapshotStore} instances for the Eventum provider
@@ -22,7 +28,7 @@ export class StoreFactory {
       case EventumProvider.AWS:
         return new EventDynamoDBStore();
       default:
-        throw new Error(`EventStore not available for ${Eventum.config().provider}`);
+        throw new EventumError(`EventStore not available for ${Eventum.config().provider}`);
     }
   }
 
@@ -38,7 +44,7 @@ export class StoreFactory {
       case EventumProvider.AWS:
         return new SnapshotDynamoDBStore();
       default:
-        throw new Error(`SnapshotStore not available for ${Eventum.config().provider}`);
+        throw new EventumError(`SnapshotStore not available for ${Eventum.config().provider}`);
     }
   }
 }

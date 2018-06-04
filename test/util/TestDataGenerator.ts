@@ -4,6 +4,10 @@ import { Snapshot, SnapshotKey, SnapshotInput } from "../../src/model/Snapshot";
 import { Journal, JournalKey } from "../../src/model/Journal";
 
 export class TestDataGenerator {
+  public static randomUUID(): string {
+    return faker.random.uuid();
+  }
+
   public static randomEventType(): string {
     return faker.random.word().replace(" ", "");
   }
@@ -29,6 +33,7 @@ export class TestDataGenerator {
 
   public static randomEvent(aggregateId?: string, sequence?: number): Event {
     return {
+      eventId: this.randomUUID(),
       eventType: this.randomEventType(),
       occurredAt: this.randomDate(),
       aggregateId: aggregateId || this.randomAggregateId(),
@@ -75,6 +80,7 @@ export class TestDataGenerator {
 
   public static randomSnapshot(aggregateId?: string, sequence?: number): Snapshot {
     return {
+      snapshotId: this.randomUUID(),
       aggregateId: aggregateId || this.randomAggregateId(),
       sequence: sequence && sequence > 0 ? sequence : this.randomSequence(),
       payload: this.randomPayload()

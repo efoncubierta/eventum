@@ -8,7 +8,7 @@ import "mocha";
 // eventum dependencies
 import { EventStore } from "../../../src/store/EventStore";
 import { EventDynamoDBStore } from "../../../src/store/aws/EventDynamoDBStore";
-import { Event } from "../../../src/model/Event";
+import { Event, EventKey } from "../../../src/model/Event";
 
 // test dependencies
 import { TestDataGenerator } from "../../util/TestDataGenerator";
@@ -58,6 +58,10 @@ function eventDynamoDBStoreTests() {
       // reverse sequence of events to demonstrate order doesn't matter as long as there is a sequence id
       const events = TestDataGenerator.randomEventArray(sampleSize, aggregateId, startSequence).reverse();
       const lastEvent = events[0]; // last one is the first one in reversed order
+      const lastEventKey: EventKey = {
+        aggregateId,
+        sequence: endSequence
+      };
 
       return eventStore
         .saveBatch(events)
@@ -72,16 +76,22 @@ function eventDynamoDBStoreTests() {
 
           return eventStore.getLast(aggregateId);
         })
-        .then((event) => {
+        .then((eventOpt) => {
           // the last event should match, despite the order in which it was saved
-          event.should.exist;
-          event.should.eql(lastEvent);
+          eventOpt.should.exist;
+          eventOpt.isSome().should.be.true;
 
-          return eventStore.get(aggregateId, endSequence);
+          const e = eventOpt.getOrElse(null);
+          e.should.eql(lastEvent);
+
+          return eventStore.get(lastEventKey);
         })
-        .then((event) => {
-          event.should.exist;
-          event.should.eql(lastEvent);
+        .then((eventOpt) => {
+          eventOpt.should.exist;
+          eventOpt.isSome().should.be.true;
+
+          const e = eventOpt.getOrElse(null);
+          e.should.eql(lastEvent);
         });
     });
 
@@ -142,12 +152,16 @@ function eventDynamoDBStoreTests() {
       // reverse sequence of events to demonstrate order doesn't matter as long as there is a sequence id
       const events = TestDataGenerator.randomEventArray(sampleSize, aggregateId, startSequence).reverse();
       const lastEvent = events[rollBackSize]; // last one will be in rollBackSize position after roll-back is performed
+      const rollbackEventKey: EventKey = {
+        aggregateId,
+        sequence: endSequence - rollBackSize + 1
+      };
 
       return eventStore
         .saveBatch(events)
         .then(() => {
           // +1 or it'll delete 21 items
-          return eventStore.rollbackTo(aggregateId, endSequence - rollBackSize + 1);
+          return eventStore.rollbackTo(rollbackEventKey);
         })
         .then(() => {
           return eventStore.getRange(aggregateId, startSequence, endSequence);
@@ -159,10 +173,13 @@ function eventDynamoDBStoreTests() {
 
           return eventStore.getLast(aggregateId);
         })
-        .then((event) => {
+        .then((eventOpt) => {
           // the last event should match, despite the order in which it was saved
-          event.should.exist;
-          event.should.eql(lastEvent);
+          eventOpt.should.exist;
+          eventOpt.isSome().should.be.true;
+
+          const e = eventOpt.getOrElse(null);
+          e.should.eql(lastEvent);
         });
     });
 
@@ -175,11 +192,15 @@ function eventDynamoDBStoreTests() {
       // reverse sequence of events to demonstrate order doesn't matter as long as there is a sequence id
       const events = TestDataGenerator.randomEventArray(sampleSize, aggregateId, startSequence).reverse();
       const lastEvent = events[0]; // last one is the first one in reversed order
+      const rollfowardEventKey: EventKey = {
+        aggregateId,
+        sequence: startSequence + rollForwadSize
+      };
 
       return eventStore
         .saveBatch(events)
         .then(() => {
-          return eventStore.rollforwardTo(aggregateId, startSequence + rollForwadSize);
+          return eventStore.rollforwardTo(rollfowardEventKey);
         })
         .then(() => {
           return eventStore.getRange(aggregateId, startSequence, endSequence);
@@ -191,27 +212,36 @@ function eventDynamoDBStoreTests() {
 
           return eventStore.getLast(aggregateId);
         })
-        .then((event) => {
+        .then((eventOpt) => {
           // the last event should match, despite the order in which it was saved
-          event.should.exist;
-          event.should.eql(lastEvent);
+          eventOpt.should.exist;
+          eventOpt.isSome().should.be.true;
+
+          const e = eventOpt.getOrElse(null);
+          e.should.eql(lastEvent);
         });
     });
 
     it("get() should resolve to null for a random aggregateId and sequence", () => {
       const aggregateId = TestDataGenerator.randomAggregateId();
       const sequence = TestDataGenerator.randomSequence();
+      const eventKey: EventKey = {
+        aggregateId,
+        sequence
+      };
 
-      return eventStore.get(aggregateId, sequence).then((event) => {
-        chai.should().not.exist(event);
+      return eventStore.get(eventKey).then((eventOpt) => {
+        chai.should().exist(eventOpt);
+        eventOpt.isNone().should.be.true;
       });
     });
 
     it("get() should resolve to null for a random aggregateId", () => {
       const aggregateId = TestDataGenerator.randomAggregateId();
 
-      return eventStore.getLast(aggregateId).then((event) => {
-        chai.should().not.exist(event);
+      return eventStore.getLast(aggregateId).then((eventOpt) => {
+        chai.should().exist(eventOpt);
+        eventOpt.isNone().should.be.true;
       });
     });
 

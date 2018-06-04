@@ -1,7 +1,8 @@
 import { NotFoundError } from "./NotFoundError";
+import { EventKey } from "../model/Event";
 
 export class EventNotFoundError extends NotFoundError {
-  constructor(aggregateId: string, sequence: number) {
-    super(`Event(${aggregateId}, ${sequence}) not found`);
+  constructor(eventKey: EventKey) {
+    super(`Event(${eventKey.aggregateId}, ${eventKey.sequence}) not found`);
   }
 }

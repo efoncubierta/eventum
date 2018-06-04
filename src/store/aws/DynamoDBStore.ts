@@ -3,9 +3,6 @@ import { DynamoDB } from "aws-sdk";
 import { operation as retryOperation } from "retry";
 import { BatchWriteItemRequestMap, BatchWriteItemOutput } from "aws-sdk/clients/dynamodb";
 
-// typings
-import { Nullable } from "../../typings/Nullable";
-
 /**
  * Utility class for DynamoDB based stores.
  */
@@ -35,16 +32,24 @@ export abstract class DynamoDBStore {
             RequestItems: unprocessedItems
           },
           (error, result) => {
+            // internal error? then reject promise immediately and stop retry
             if (error) {
-              reject(error);
-            } else if (result.UnprocessedItems && operation.retry(new Error("Unprocessed items"))) {
-              // retry?
+              return reject(error);
+            }
+
+            // are there unprocessed items? then attempt to retry
+            if (
+              result.UnprocessedItems &&
+              Object.keys(result.UnprocessedItems).length > 0 &&
+              operation.retry(new Error("Unprocessed items"))
+            ) {
               // update list of unprocessed items
               unprocessedItems = result.UnprocessedItems;
-              return unprocessedItems;
-            } else {
-              resolve(result.UnprocessedItems);
+              return;
             }
+
+            // if retry is exausted, then return the unprocessed items
+            resolve(result.UnprocessedItems);
           }
         );
       });

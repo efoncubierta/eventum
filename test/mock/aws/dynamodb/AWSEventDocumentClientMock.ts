@@ -124,12 +124,12 @@ export class AWSEventDocumentClientMock implements AWSDocumentClientMock {
 
     requestItems.forEach((requestItem) => {
       if (requestItem.PutRequest) {
-        const item = DynamoDB.Converter.unmarshall(requestItem.PutRequest.Item);
+        const item = requestItem.PutRequest.Item;
 
         InMemoryEventStore.putEvent(item as Event);
       } else if (requestItem.DeleteRequest) {
-        const aggregateId: string = requestItem.DeleteRequest.Key.aggregateId.S;
-        const sequence: number = Number(requestItem.DeleteRequest.Key.sequence.N);
+        const aggregateId: string = requestItem.DeleteRequest.Key.aggregateId;
+        const sequence: number = requestItem.DeleteRequest.Key.sequence;
 
         InMemoryEventStore.deleteEvent(aggregateId, sequence);
       } else {

@@ -24,7 +24,7 @@ custom:
   eventum:
     snapshot:
       retention:
-        count: 2
+        count: "2"
 
 provider:
   name: aws

@@ -1,7 +1,8 @@
 import { NotFoundError } from "./NotFoundError";
+import { SnapshotKey } from "../model/Snapshot";
 
 export class SnapshotNotFoundError extends NotFoundError {
-  constructor(aggregateId: string, sequence: number) {
-    super(`Snapshot(${aggregateId}, ${sequence}) not found`);
+  constructor(snapshotKey: SnapshotKey) {
+    super(`Snapshot(${snapshotKey.aggregateId}, ${snapshotKey.sequence}) not found`);
   }
 }

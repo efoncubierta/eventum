@@ -16,15 +16,18 @@ export function wrapAWSLambdaHandler<I, O>(handler: LambdaHandler<I, O>): Handle
   return (event: I, context: Context, callback: Callback<LambdaResponse<O>>) => {
     // invoke function
     handler(event)
-      .then((result) => {
-        // handle successful responses
-        handleSuccessResponse(callback, result);
+      .then((either) => {
+        // handler may have responded with either an error (left) or a valid result (right)
+        either.fold(
+          (err) => handleErrorResponse(callback, err.errorType, err.message),
+          (result) => handleSuccessResponse(callback, result)
+        );
       })
       .catch((err) => {
-        // handle lambda predefined errors
         if (err instanceof EventumError) {
           handleErrorResponse(callback, err.errorType, err.message);
         } else {
+          // handle uncatched errors
           handleErrorResponse(callback, ErrorType.Unknown, err.message);
         }
       });

@@ -1,40 +1,46 @@
-import { Snapshot } from "../model/Snapshot";
-import { Nullable } from "../typings/Nullable";
+// FP dependencies
+import { Option } from "fp-ts/lib/Option";
 
+// Eventum models
+import { Snapshot, SnapshotKey } from "../model/Snapshot";
+
+/**
+ * Manage snapshots in a data store.
+ */
 export interface SnapshotStore {
   /**
    * Get a snapshot.
    *
-   * @param aggregateId Aggregate ID
-   * @param sequence Sequence
+   * @param snapshotKey Snapshot key
+   *
+   * @returns Promise with an optional snapshot.
    */
-  get(aggregateId: string, sequence: number): Promise<Nullable<Snapshot>>;
+  get(snapshotKey: SnapshotKey): Promise<Option<Snapshot>>;
 
   /**
-   * Get current snapshot.
-   *
-   * This action is executed asynchronously, returning a promise with a {@link Snapshot}. If there was a failure
-   * getting the snapshot, the promise would be rejected. If there is no snapshot for the aggregate, null
-   * will be returned.
+   * Get the latest snapshot of an aggregate.
    *
    * @param aggregateId Aggregate ID
+   *
+   * @returns Promise with an optional snapshot.
    */
-  getLatest(aggregateId: string): Promise<Nullable<Snapshot>>;
+  getLatest(aggregateId: string): Promise<Option<Snapshot>>;
 
   /**
    * Save a snapshot.
    *
    * @param snapshot Snapshot
+   *
+   * @returns Promise that will be rejected if any error occurrs.
    */
   save(snapshot: Snapshot): Promise<void>;
 
   /**
-   * Purge snapshots since the begining of time until an event sequence.
-   *
-   * This action is executed asynchronously, returning a promise. If there was a failure purging snapshots
-   * to a certain point, the promise would be rejected.
+   * Purge redundant aggregates.
    *
    * @param aggregateId Aggregate ID
+   *
+   * @return Promise that will be rejected if any error occurrs.
    */
   purge(aggregateId: string): Promise<void>;
 }

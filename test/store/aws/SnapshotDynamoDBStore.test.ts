@@ -8,7 +8,7 @@ import "mocha";
 // eventum dependencies
 import { SnapshotStore } from "../../../src/store/SnapshotStore";
 import { SnapshotDynamoDBStore } from "../../../src/store/aws/SnapshotDynamoDBStore";
-import { Snapshot } from "../../../src/model/Snapshot";
+import { Snapshot, SnapshotKey } from "../../../src/model/Snapshot";
 
 // test dependencies
 import { TestDataGenerator } from "../../util/TestDataGenerator";
@@ -38,17 +38,23 @@ function snapshotDynamoDBStoreTests() {
     it("get() should resolve to null for a random aggregateId and sequence", () => {
       const aggregateId = TestDataGenerator.randomAggregateId();
       const sequence = TestDataGenerator.randomSequence();
+      const snapshotKey: SnapshotKey = {
+        aggregateId,
+        sequence
+      };
 
-      return snapshotStore.get(aggregateId, sequence).then((snapshot) => {
-        chai.should().not.exist(snapshot);
+      return snapshotStore.get(snapshotKey).then((snapshotOpt) => {
+        chai.should().exist(snapshotOpt);
+        snapshotOpt.isNone().should.be.true;
       });
     });
 
     it("getLatest() should resolve to null for a random aggregateId", () => {
       const aggregateId = TestDataGenerator.randomAggregateId();
 
-      return snapshotStore.getLatest(aggregateId).then((snapshot) => {
-        chai.should().not.exist(snapshot);
+      return snapshotStore.getLatest(aggregateId).then((snapshotOpt) => {
+        chai.should().exist(snapshotOpt);
+        snapshotOpt.isNone().should.be.true;
       });
     });
 
@@ -67,23 +73,33 @@ function snapshotDynamoDBStoreTests() {
         .then(() => {
           return snapshotStore.getLatest(aggregateId);
         })
-        .then((latestSnapshot) => {
-          latestSnapshot.should.exist;
-          latestSnapshot.should.be.eql(snapshots[sampleSize - 1]);
+        .then((latestSnapshotOpt) => {
+          latestSnapshotOpt.should.exist;
+          latestSnapshotOpt.isSome().should.be.true;
+
+          const s = latestSnapshotOpt.getOrElse(null);
+          s.should.be.eql(snapshots[sampleSize - 1]);
         });
     });
 
     it("save() should save a snapshot", () => {
       const snapshot = TestDataGenerator.randomSnapshot();
+      const snapshotKey: SnapshotKey = {
+        aggregateId: snapshot.aggregateId,
+        sequence: snapshot.sequence
+      };
 
       return snapshotStore
         .save(snapshot)
         .then(() => {
-          return snapshotStore.get(snapshot.aggregateId, snapshot.sequence);
+          return snapshotStore.get(snapshotKey);
         })
-        .then((savedSnapshot) => {
-          savedSnapshot.should.exist;
-          savedSnapshot.should.be.eql(snapshot);
+        .then((savedSnapshotOpt) => {
+          savedSnapshotOpt.should.exist;
+          savedSnapshotOpt.isSome().should.be.true;
+
+          const s = savedSnapshotOpt.getOrElse(null);
+          s.should.be.eql(snapshot);
         });
     });
 
@@ -93,6 +109,10 @@ function snapshotDynamoDBStoreTests() {
       const startSequence = TestDataGenerator.randomSequence();
       const endSequence = startSequence + sampleSize - 1;
       const snapshots = TestDataGenerator.randomSnapshots(sampleSize, aggregateId, startSequence);
+      const latestSnapshotKey: SnapshotKey = {
+        aggregateId,
+        sequence: endSequence
+      };
 
       const promises = [];
       for (let i = 0; i < sampleSize; i++) {
@@ -106,15 +126,21 @@ function snapshotDynamoDBStoreTests() {
         .then(() => {
           return snapshotStore.getLatest(aggregateId);
         })
-        .then((latestSnapshot) => {
-          latestSnapshot.should.exist;
-          latestSnapshot.should.be.eql(snapshots[sampleSize - 1]);
+        .then((latestSnapshotOpt) => {
+          latestSnapshotOpt.should.exist;
+          latestSnapshotOpt.isSome().should.be.true;
 
-          return snapshotStore.get(aggregateId, endSequence);
+          const s = latestSnapshotOpt.getOrElse(null);
+          s.should.be.eql(snapshots[sampleSize - 1]);
+
+          return snapshotStore.get(latestSnapshotKey);
         })
-        .then((snapshot) => {
-          snapshot.should.exist;
-          snapshot.should.be.eql(snapshots[sampleSize - 1]);
+        .then((snapshotOpt) => {
+          snapshotOpt.should.exist;
+          snapshotOpt.isSome().should.be.true;
+
+          const s = snapshotOpt.getOrElse(null);
+          s.should.be.eql(snapshots[sampleSize - 1]);
         });
     });
   });

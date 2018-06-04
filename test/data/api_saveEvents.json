@@ -1,19 +1,23 @@
-{
-  "events": [
-    {
-      "eventType": "TestEvent",
-      "aggregateId": "1234",
-      "payload": { "prop1": "property1 value" }
-    },
-    {
-      "eventType": "TestEvent",
-      "aggregateId": "1234",
-      "payload": { "prop1": "property1 value" }
-    },
-    {
-      "eventType": "TestEvent",
-      "aggregateId": "1234",
-      "payload": { "prop1": "property1 value" }
+[
+  {
+    "eventType": "TestEvent",
+    "aggregateId": "1234",
+    "payload": {
+      "prop1": "property1 value"
     }
-  ]
-}
+  },
+  {
+    "eventType": "TestEvent",
+    "aggregateId": "1234",
+    "payload": {
+      "prop1": "property1 value"
+    }
+  },
+  {
+    "eventType": "TestEvent",
+    "aggregateId": "1234",
+    "payload": {
+      "prop1": "property1 value"
+    }
+  }
+]

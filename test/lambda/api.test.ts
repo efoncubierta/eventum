@@ -282,9 +282,12 @@ function apiTests() {
               const journal = response.payload;
               journal.should.exist;
               journal.aggregateId.should.equals(aggregateId);
+
               journal.snapshot.should.exist;
-              journal.snapshot.aggregateId.should.equal(aggregateId);
-              journal.snapshot.sequence.should.equal(snapshotSequence);
+              const snapshot = journal.snapshot;
+              snapshot.aggregateId.should.equal(aggregateId);
+              snapshot.sequence.should.equal(snapshotSequence);
+
               journal.events.length.should.equals(10);
             }
           })

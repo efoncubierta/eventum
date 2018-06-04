@@ -11,6 +11,8 @@ import { AWSMock } from "../mock/aws";
 
 // eventum dependencies
 import { JournalService } from "../../src/service/JournalService";
+import { SnapshotKey } from "../../src/model/Snapshot";
+import { EventKey } from "../../src/model/Event";
 
 function journalServiceTests() {
   describe("JournalService", () => {
@@ -31,24 +33,35 @@ function journalServiceTests() {
     it("getJournal() should return null for a random aggregateId", () => {
       const aggregateId = TestDataGenerator.randomAggregateId();
 
-      return JournalService.getJournal(aggregateId).then((journal) => {
-        chai.should().not.exist(journal);
+      return JournalService.getJournal(aggregateId).then((journalOpt) => {
+        chai.should().exist(journalOpt);
+        journalOpt.isNone().should.be.true;
       });
     });
 
     it("getEvent() should return null for a random aggregateId", () => {
       const aggregateId = TestDataGenerator.randomAggregateId();
+      const eventKey: EventKey = {
+        aggregateId,
+        sequence: 0
+      };
 
-      return JournalService.getEvent(aggregateId, 0).then((event) => {
-        chai.should().not.exist(event);
+      return JournalService.getEvent(eventKey).then((eventOpt) => {
+        chai.should().exist(eventOpt);
+        eventOpt.isNone().should.be.true;
       });
     });
 
     it("getSnapshot() should return null for a random aggregateId", () => {
       const aggregateId = TestDataGenerator.randomAggregateId();
+      const snapshotKey: SnapshotKey = {
+        aggregateId,
+        sequence: 0
+      };
 
-      return JournalService.getSnapshot(aggregateId, 0).then((snapshot) => {
-        chai.should().not.exist(snapshot);
+      return JournalService.getSnapshot(snapshotKey).then((snapshotOpt) => {
+        chai.should().exist(snapshotOpt);
+        snapshotOpt.isNone().should.be.true;
       });
     });
 
@@ -64,29 +77,42 @@ function journalServiceTests() {
       const snapshotSequence = sampleSize - 10;
       const eventInputs = TestDataGenerator.randomEventInputArray(sampleSize, aggregateId);
       const snapshotInput = TestDataGenerator.randomSnapshotInput(aggregateId, snapshotSequence);
+      const snapshotKey: SnapshotKey = {
+        aggregateId,
+        sequence: snapshotSequence
+      };
 
       return JournalService.saveEvents(eventInputs)
         .then(() => {
           return JournalService.saveSnapshot(snapshotInput);
         })
         .then(() => {
-          return JournalService.getSnapshot(aggregateId, snapshotSequence);
+          return JournalService.getSnapshot(snapshotKey);
         })
-        .then((snapshot) => {
-          chai.should().exist(snapshot);
-          snapshot.aggregateId.should.equal(snapshotInput.aggregateId);
-          snapshot.sequence.should.equal(snapshotInput.sequence);
-          snapshot.payload.should.eql(snapshotInput.payload);
+        .then((snapshotOpt) => {
+          chai.should().exist(snapshotOpt);
+          snapshotOpt.isSome().should.be.true;
+
+          const s = snapshotOpt.getOrElse(null);
+          s.aggregateId.should.equal(snapshotInput.aggregateId);
+          s.sequence.should.equal(snapshotInput.sequence);
+          s.payload.should.eql(snapshotInput.payload);
 
           return JournalService.getJournal(aggregateId);
         })
-        .then((journal) => {
-          chai.should().exist(journal);
-          journal.aggregateId.should.equals(aggregateId);
-          journal.snapshot.should.exist;
-          journal.snapshot.aggregateId.should.equal(aggregateId);
-          journal.snapshot.sequence.should.equal(snapshotSequence);
-          journal.events.length.should.equals(10);
+        .then((journalOpt) => {
+          chai.should().exist(journalOpt);
+          journalOpt.isSome().should.be.true;
+
+          const j = journalOpt.getOrElse(null);
+          j.aggregateId.should.equals(aggregateId);
+          j.snapshot.should.exist;
+
+          const s = j.snapshot;
+          s.aggregateId.should.equal(aggregateId);
+          s.sequence.should.equal(snapshotSequence);
+
+          j.events.length.should.equals(10);
         });
     });
 
@@ -109,10 +135,13 @@ function journalServiceTests() {
 
       return JournalService.saveEvents(events).then(() => {
         const promises = aggregateIds.map((aggregateId) => {
-          return JournalService.getJournal(aggregateId).then((journal) => {
-            chai.should().exist(journal);
-            journal.aggregateId.should.equals(aggregateId);
-            journal.events.length.should.equals(eventsDic[aggregateId].length);
+          return JournalService.getJournal(aggregateId).then((journalOpt) => {
+            chai.should().exist(journalOpt);
+            journalOpt.isSome().should.be.true;
+
+            const j = journalOpt.getOrElse(null);
+            j.aggregateId.should.equals(aggregateId);
+            j.events.length.should.equals(eventsDic[aggregateId].length);
           });
         });
 

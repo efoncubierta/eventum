@@ -1,11 +1,11 @@
-// typings
-import { Nullable } from "../typings/Nullable";
+// FP dependencies
+import { Option } from "fp-ts/lib/Option";
 
-// models
-import { Event } from "../model/Event";
+// Eventum models
+import { Event, EventKey } from "../model/Event";
 
 export interface StoreBatchResponse<T> {
-  successItems?: T[];
+  succeededItems?: T[];
   failedItems?: T[];
 }
 
@@ -29,15 +29,11 @@ export interface EventStore {
    *
    * Events don't need to be validated, that's {@link JournalService}'s job. The store must be as faster as it can be.
    *
-   * This action is executed asynchronously, returning a promise with a {@link EventStoreBatchResponse}. If there were
-   * failures saving one of the events, the promise would be rejected. It will only resolve when all the events in the
-   * batch have been successfuly saved. Any other general failure will also reject the promise
-   * i.e. DB connectivity issues.
-   *
-   * A rejected promise can potentially leave the store in an inconsistent state when the data store saves each event
-   * in its own atomic transaction. It is up the caller how to manage the error.
-   *
    * @param events Array of events
+   *
+   * @returns Promise with the batch summary details. A rejected promise can potentially leave the store in an
+   * inconsistent state when the data store saves each event in its own atomic transaction. It is up the caller
+   * how to manage the error.
    */
   saveBatch(events: Event[]): Promise<EventStoreBatchResponse>;
 
@@ -52,15 +48,11 @@ export interface EventStore {
    *
    * Events don't need to be validated, that's {@link JournalService}'s job. The store must be as faster as it can be.
    *
-   * This action is executed asynchronously, returning a promise with a {@link EventStoreBatchResponse}. If there
-   * were failures removing one of the events, the promise would be rejected. It will only resolve when all the events
-   * in the batch have been successfully saved. Any other general failure will also reject the promise
-   * i.e. DB connectivity issues.
+   * @param events Array of events
    *
-   * A rejected promise can potentially leave the store in an inconsisten state when the  data store saves each
-   * event in its own transaction. It is up to the caller how to manage the error.
-   *
-   * @param events Events
+   * @returns Promise with the batch summary details. A rejected promise can potentially leave the store in an
+   * inconsistent state when the data store saves each event in its own atomic transaction. It is up the caller
+   * how to manage the error.
    */
   removeBatch(events: Event[]): Promise<EventStoreBatchResponse>;
 
@@ -69,55 +61,50 @@ export interface EventStore {
    *
    * Events with a higher sequence number than the given sequence number are deleted forever. Range [sequence, last]
    *
-   * This action is executed asynchronously, returning a promise.
+   * @param eventKey Event key
    *
-   * @param aggregateId Aggregate ID
-   * @param sequence Least sequence number to be included (i.e. range [sequence, last])
+   * @returns Promise that will be rejected if an error happens during the rollback process.
    */
-  rollbackTo(aggregateId: string, sequence: number): Promise<void>;
+  rollbackTo(eventKey: EventKey): Promise<void>;
 
   /**
-   * Roll events forward to a certian sequence.
+   * Roll events forward to a specific event.
    *
    * Events with a lower sequence number than the given sequence number are deleted forever. Range [first, sequence]
    *
-   * This action is executed asynchronously, returning a promise.
+   * @param eventKey Event key
    *
-   * @param aggregateId Aggregate ID
-   * @param sequence Last sequence number to be included
+   * @returns Promise that will be rejected if an error happens during the roll-forward process.
    */
-  rollforwardTo(aggregateId: string, sequence: number): Promise<void>;
+  rollforwardTo(eventKey: EventKey): Promise<void>;
 
   /**
    * Get an event.
    *
-   * This action is executed asynchronously, returning a promise with {@link Event}. If no event is found,
-   * null would be returned.
+   * @param eventKey Event key
    *
-   * @param aggregateId Aggregate ID
-   * @param sequence Sequence
+   * @return Promise that will resolve to an optional event.
    */
-  get(aggregateId: string, sequence: number): Promise<Nullable<Event>>;
+  get(eventKey: EventKey): Promise<Option<Event>>;
 
   /**
    * Get the last event for a particular aggregate.
    *
-   * This action is executed asynchronously, returning a promise with an {@link Event}. If there are no events
-   * for that aggregate, it'll return null.
-   *
    * @param aggregateId Aggregate ID
+   *
+   * @return Promise that will resolve to an optional event.
    */
-  getLast(aggregateId: string): Promise<Nullable<Event>>;
+  getLast(aggregateId: string): Promise<Option<Event>>;
 
   /**
    * Get a range of events for a particular aggregate.
    *
-   * This action is executed asynchronously, returning a promise with {@link Event[]}. If no events were found,
-   * and empty array would be returned.
-   *
    * @param aggregateId Aggregate ID
    * @param fromSequence Start sequence number. Default is 0
    * @param toSequence End sequence number. Default is Number.MAX_SAFE_INTEGER
+   *
+   * @return Promise that will resolve to a list of events. An empty list will be returned if no
+   * events are found.
    */
   getRange(aggregateId: string, fromSequence?: number, toSequence?: number): Promise<Event[]>;
 }

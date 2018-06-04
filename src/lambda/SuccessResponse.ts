@@ -1,6 +1,6 @@
 import { ResponseType } from "./ResponseType";
 
-export class SuccessResponse<T> {
-  public readonly type = ResponseType.OK;
-  public readonly payload?: T;
+export interface SuccessResponse<T> {
+  readonly type: ResponseType.OK;
+  readonly payload?: T;
 }

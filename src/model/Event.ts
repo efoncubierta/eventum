@@ -1,14 +1,16 @@
-import { Nullable } from "../typings/Nullable";
 import { AggregateId, Sequence } from "./Common";
 
+export type EventId = string;
+export type EventType = string;
 export type EventPayload = any;
 
 export interface Event {
-  eventType: string;
+  eventId: EventId;
+  eventType: EventType;
   occurredAt: string;
   aggregateId: AggregateId;
   sequence: Sequence;
-  payload: Nullable<EventPayload>;
+  payload?: EventPayload;
 }
 
 export type EventKey = Pick<Event, "aggregateId" | "sequence">;

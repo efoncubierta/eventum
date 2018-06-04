@@ -1,18 +1,21 @@
+// External dependencies
+import { Option, some, none } from "fp-ts/lib/Option";
+import * as UUID from "uuid";
+
+// Eventum stores
 import { StoreFactory } from "../store/StoreFactory";
 
-// typings
-import { Nullable } from "../typings/Nullable";
-
-// model
-import { Event, EventInput } from "../model/Event";
-import { Snapshot, SnapshotInput } from "../model/Snapshot";
-import { Journal, JournalBuilder } from "../model/Journal";
+// Eventum models
+import { Event, EventInput, EventKey } from "../model/Event";
+import { Snapshot, SnapshotInput, SnapshotKey } from "../model/Snapshot";
+import { Journal } from "../model/Journal";
 import { AggregateId } from "../model/Common";
 
-// validation
+// Eventum validation
 import { SchemaValidator } from "../validation/SchemaValidator";
+import { EventNotFoundError } from "../error/EventNotFoundError";
 
-interface EventRequestsDic {
+interface EventInputsDic {
   [x: string]: EventInput[];
 }
 
@@ -27,12 +30,12 @@ export class JournalService {
   /**
    * Get an event.
    *
-   * @param aggregateId Aggregate id
-   * @param sequence Sequence
+   * @param eventKey Event key
+   *
    * @return Promise with an event, or null if not found
    */
-  public static getEvent(aggregateId: string, sequence: number): Promise<Nullable<Event>> {
-    return StoreFactory.getEventStore().get(aggregateId, sequence);
+  public static getEvent(eventKey: EventKey): Promise<Option<Event>> {
+    return StoreFactory.getEventStore().get(eventKey);
   }
 
   /**
@@ -46,39 +49,41 @@ export class JournalService {
    * @param aggregateId Aggregate id
    * @return Promise with a journal, or null if not found
    */
-  public static getJournal(aggregateId: string): Promise<Nullable<Journal>> {
-    let journalBuilder = new JournalBuilder().aggregateId(aggregateId);
-
+  public static getJournal(aggregateId: string): Promise<Option<Journal>> {
     return StoreFactory.getSnapshotStore()
       .getLatest(aggregateId)
-      .then((snapshot) => {
-        // update journal builder
-        if (snapshot) {
-          journalBuilder = journalBuilder.snapshot(snapshot);
-        }
-
+      .then((snapshotOpt) => {
         // fetch events since last snapshot or the begining
-        const fromSequence = snapshot ? snapshot.sequence + 1 : 0;
-        return StoreFactory.getEventStore().getRange(aggregateId, fromSequence);
+        const fromSequence = snapshotOpt.fold(1, (s) => (s ? s.sequence + 1 : 1));
+        return Promise.all([snapshotOpt, StoreFactory.getEventStore().getRange(aggregateId, fromSequence)]);
       })
-      .then((events) => {
-        // update journal builder with the events and build the journal
-        const journal = journalBuilder.events(events).build();
+      .then((results) => {
+        const snapshotOpt = results[0]; // chained result
+        const events = results[1]; // range of events
 
         // only return the journal if there is at least one snapshot or one event
-        return journal.snapshot || journal.events.length > 0 ? journal : null;
+        if (snapshotOpt.isSome() || events.length > 0) {
+          const snapshot = snapshotOpt.fold(undefined, (s) => s);
+          return some({
+            aggregateId,
+            snapshot,
+            events
+          });
+        } else {
+          return none;
+        }
       });
   }
 
   /**
    * Get a snapshot.
    *
-   * @param aggregateId Aggregate id
-   * @param sequence Sequence
+   * @param snapshotKey Snapshot key
+   *
    * @return Promise with a snapshot, or null if not found
    */
-  public static getSnapshot(aggregateId: string, sequence: number): Promise<Nullable<Snapshot>> {
-    return StoreFactory.getSnapshotStore().get(aggregateId, sequence);
+  public static getSnapshot(snapshotKey: SnapshotKey): Promise<Option<Snapshot>> {
+    return StoreFactory.getSnapshotStore().get(snapshotKey);
   }
 
   /**
@@ -92,21 +97,23 @@ export class JournalService {
    * @param snapshotInput Snapshot input
    */
   public static saveSnapshot(snapshotInput: SnapshotInput): Promise<void> {
+    const eventKey: EventKey = {
+      aggregateId: snapshotInput.aggregateId,
+      sequence: snapshotInput.sequence
+    };
+
     return StoreFactory.getEventStore()
-      .get(snapshotInput.aggregateId, snapshotInput.sequence)
-      .then((event) => {
+      .get(eventKey)
+      .then((eventOpt) => {
         // event must exist to create the snapshot
-        if (!event) {
-          throw new Error(
-            `Event(${snapshotInput.aggregateId}, ${
-              snapshotInput.sequence
-            }) does not exist. An snapshot cannot be created from it.`
-          );
+        if (eventOpt.isNone()) {
+          throw new EventNotFoundError(eventKey);
         }
 
         // TODO validate input
 
         const snapshot: Snapshot = {
+          snapshotId: UUID.v4(),
           aggregateId: snapshotInput.aggregateId,
           sequence: snapshotInput.sequence,
           payload: snapshotInput.payload
@@ -138,7 +145,7 @@ export class JournalService {
     }
 
     // build a dictionary aggregateId -> Event[]
-    const eventRequestsDic: EventRequestsDic = eventInputs.reduce(
+    const eventRequestsDic: EventInputsDic = eventInputs.reduce(
       (last, current) => {
         // all events must be valid according to the schema
         const result = SchemaValidator.validateEventInput(current);
@@ -152,26 +159,26 @@ export class JournalService {
 
         return last;
       },
-      {} as EventRequestsDic
+      {} as EventInputsDic
     );
 
     // iterate over each aggregateId and correlate its events to the last one created
-    // this operation resolves to Event[][]
-    const correlatedEventsPromises = Object.keys(eventRequestsDic).map((aggregateId) => {
+    // this operation resolves to Promise<Event[]>[]
+    const correlatedEventsPromises: Array<Promise<Event[]>> = Object.keys(eventRequestsDic).map((aggregateId) => {
       return StoreFactory.getEventStore()
         .getLast(aggregateId)
-        .then((lastEvent) => {
-          let nextSequence = lastEvent ? lastEvent.sequence + 1 : 1;
+        .then((lastEventOpt) => {
+          let nextSequence = lastEventOpt.fold(1, (e) => e.sequence + 1);
 
           return eventRequestsDic[aggregateId].map((eventRequest) => {
-            const now = new Date();
             return {
+              eventId: UUID.v4(),
               eventType: eventRequest.eventType,
-              occurredAt: now.toISOString(),
+              occurredAt: new Date().toISOString(),
               aggregateId: eventRequest.aggregateId,
               sequence: nextSequence++,
               payload: eventRequest.payload
-            } as Event;
+            };
           });
         });
     });
@@ -184,9 +191,11 @@ export class JournalService {
         }, []);
         return StoreFactory.getEventStore().saveBatch(events);
       })
-      .then((response) => {
-        // TODO handle response
-        return response.successItems ? response.successItems : [];
+      .then((batchResponse) => {
+        if (batchResponse.failedItems) {
+          // TODO handle response. Rollback?
+        }
+        return batchResponse.succeededItems ? batchResponse.succeededItems : [];
       });
   }
 }
