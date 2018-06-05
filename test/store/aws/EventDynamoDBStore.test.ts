@@ -35,6 +35,62 @@ function eventDynamoDBStoreTests() {
       AWSMock.restoreMock();
     });
 
+    it("save()/remove() should save and remove an event by its EventKey", () => {
+      const event = TestDataGenerator.randomEvent();
+      const eventKey: EventKey = {
+        aggregateId: event.aggregateId,
+        sequence: event.sequence
+      };
+
+      return eventStore
+        .save(event)
+        .then(() => {
+          return eventStore.get(eventKey);
+        })
+        .then((eventOpt) => {
+          eventOpt.should.exist;
+          eventOpt.isSome().should.be.true;
+
+          const e = eventOpt.getOrElse(null);
+          e.should.eql(event);
+
+          return eventStore.remove(eventKey);
+        })
+        .then(() => {
+          return eventStore.get(eventKey);
+        })
+        .then((eventOpt) => {
+          eventOpt.should.exist;
+          eventOpt.isNone().should.be.true;
+        });
+    });
+
+    it("save()/removeById() should save and remove an event by its EventId", () => {
+      const event = TestDataGenerator.randomEvent();
+
+      return eventStore
+        .save(event)
+        .then(() => {
+          return eventStore.getById(event.eventId);
+        })
+        .then((eventOpt) => {
+          eventOpt.should.exist;
+          eventOpt.isSome().should.be.true;
+
+          const e = eventOpt.getOrElse(null);
+          e.should.eql(event);
+
+          return eventStore.removeById(event.eventId);
+        })
+        .then(() => {
+          return eventStore.getById(event.eventId);
+        })
+        .then((eventOpt) => {
+          eventOpt.should.exist;
+          eventOpt.isNone().should.be.true;
+        });
+    });
+
     it("saveBatch() should resolve to empty object {} if events is undefined or empty list", () => {
       return eventStore
         .saveBatch(undefined)
@@ -51,7 +107,7 @@ function eventDynamoDBStoreTests() {
     });
 
     it("saveBatch() should save a sequence of random events", () => {
-      const sampleSize = 50;
+      const sampleSize = 10;
       const aggregateId = TestDataGenerator.randomAggregateId();
       const startSequence = TestDataGenerator.randomSequence();
       const endSequence = startSequence + sampleSize - 1;
@@ -95,6 +151,15 @@ function eventDynamoDBStoreTests() {
         });
     });
 
+    it("saveBatch()/retryBatchWrite() should be rejected after 4 attempts", () => {
+      // the mock only handle 10 items per request and the retryBatchWrite is configured to attempt up to 4 times
+      const sampleSize = 41;
+      const aggregateId = TestDataGenerator.randomAggregateId();
+      const events = TestDataGenerator.randomEventArray(sampleSize, aggregateId);
+
+      return eventStore.saveBatch(events).should.be.rejected;
+    });
+
     it("removeBatch() should resolve to empty object {} if events is undefined or empty list", () => {
       return eventStore
         .removeBatch(undefined)
@@ -111,7 +176,7 @@ function eventDynamoDBStoreTests() {
     });
 
     it("removeBatch() should delete a sequence of random events", () => {
-      const sampleSize = 50;
+      const sampleSize = 10;
       const aggregateId = TestDataGenerator.randomAggregateId();
       const startSequence = TestDataGenerator.randomSequence();
       const endSequence = startSequence + sampleSize - 1;
@@ -144,8 +209,8 @@ function eventDynamoDBStoreTests() {
     });
 
     it("rollBackTo() should delete all events newer than a sequence number", () => {
-      const sampleSize = 30;
-      const rollBackSize = 20;
+      const sampleSize = 10;
+      const rollBackSize = 5;
       const aggregateId = TestDataGenerator.randomAggregateId();
       const startSequence = 1;
       const endSequence = sampleSize;
@@ -184,8 +249,8 @@ function eventDynamoDBStoreTests() {
     });
 
     it("rollForward() should delete all events older than a sequence number", () => {
-      const sampleSize = 50;
-      const rollForwadSize = 20;
+      const sampleSize = 10;
+      const rollForwadSize = 5;
       const aggregateId = TestDataGenerator.randomAggregateId();
       const startSequence = TestDataGenerator.randomSequence();
       const endSequence = startSequence + sampleSize - 1;
@@ -222,13 +287,8 @@ function eventDynamoDBStoreTests() {
         });
     });
 
-    it("get() should resolve to null for a random aggregateId and sequence", () => {
-      const aggregateId = TestDataGenerator.randomAggregateId();
-      const sequence = TestDataGenerator.randomSequence();
-      const eventKey: EventKey = {
-        aggregateId,
-        sequence
-      };
+    it("get() should resolve to None for a random EventKey", () => {
+      const eventKey = TestDataGenerator.randomEventKey();
 
       return eventStore.get(eventKey).then((eventOpt) => {
         chai.should().exist(eventOpt);
@@ -236,7 +296,16 @@ function eventDynamoDBStoreTests() {
       });
     });
 
-    it("get() should resolve to null for a random aggregateId", () => {
+    it("getById() should resolve to None for a random EventId", () => {
+      const eventId = TestDataGenerator.randomEventId();
+
+      return eventStore.getById(eventId).then((eventOpt) => {
+        chai.should().exist(eventOpt);
+        eventOpt.isNone().should.be.true;
+      });
+    });
+
+    it("getLast() should resolve to None for a random aggregateId", () => {
       const aggregateId = TestDataGenerator.randomAggregateId();
 
       return eventStore.getLast(aggregateId).then((eventOpt) => {

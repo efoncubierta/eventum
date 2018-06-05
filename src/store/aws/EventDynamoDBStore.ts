@@ -12,7 +12,7 @@ import { EventStore, EventStoreBatchResponse } from "../EventStore";
 import { DynamoDBStore } from "./DynamoDBStore";
 
 // Eventum models
-import { Event, EventKey } from "../../model/Event";
+import { Event, EventKey, EventId } from "../../model/Event";
 
 /**
  * Manage journals in a DynamoDB table.
@@ -23,140 +23,6 @@ export class EventDynamoDBStore extends DynamoDBStore implements EventStore {
   constructor() {
     super();
     this.eventsTableConfig = Eventum.config().aws.dynamodb.events;
-  }
-
-  public saveBatch(events: Event[]): Promise<EventStoreBatchResponse> {
-    if (!events || events.length === 0) {
-      return Promise.resolve({});
-    }
-
-    // Build the RequestItems request. One PutRequest per event
-    const requestItems = {};
-    requestItems[this.eventsTableConfig.tableName] = events.map((event) => {
-      return {
-        PutRequest: {
-          Item: event
-        }
-      };
-    });
-
-    return this.retryBatchWrite(requestItems).then((response) => {
-      return this.toEventStoreBatchResponse(events, response);
-    });
-  }
-
-  public removeBatch(events: Event[]): Promise<EventStoreBatchResponse> {
-    if (!events || events.length === 0) {
-      return Promise.resolve({});
-    }
-
-    // Build the RequestItems request. One DeleteRequest per event
-    const requestItems = {};
-    requestItems[this.eventsTableConfig.tableName] = events.map((event) => {
-      return {
-        DeleteRequest: {
-          Key: event
-        }
-      };
-    });
-
-    return this.retryBatchWrite(requestItems).then((response) => {
-      return this.toEventStoreBatchResponse(events, response);
-    });
-  }
-
-  public rollbackTo(eventKey: EventKey): Promise<void> {
-    const documentClient = new DynamoDB.DocumentClient();
-
-    /**
-     * 1. Get all events to be rolled back.
-     * 2. Build a RequestItem and call batchWrite.
-     */
-    return documentClient
-      .query({
-        TableName: this.eventsTableConfig.tableName,
-        ProjectionExpression: "aggregateId, #sequence",
-        KeyConditionExpression: "aggregateId = :aggregateId AND #sequence >= :sequence",
-        ExpressionAttributeNames: {
-          "#sequence": "sequence"
-        },
-        ExpressionAttributeValues: {
-          ":aggregateId": eventKey.aggregateId,
-          ":sequence": eventKey.sequence
-        }
-      })
-      .promise()
-      .then((dbResult) => {
-        const events = dbResult.Items as Event[];
-
-        // no further actions if there are no events to be deleted
-        if (events.length === 0) {
-          return;
-        }
-
-        // Build the RequestItems request. One DeleteRequest per event
-        const requestItems = {};
-        requestItems[this.eventsTableConfig.tableName] = events.map((event) => {
-          return {
-            DeleteRequest: {
-              Key: event
-            }
-          };
-        });
-
-        return this.retryBatchWrite(requestItems);
-      })
-      .then(() => {
-        // TODO handle response?
-        return;
-      });
-  }
-
-  public rollforwardTo(eventKey: EventKey): Promise<void> {
-    const documentClient = new DynamoDB.DocumentClient();
-
-    /**
-     * 1. Get all events to be rolled forward.
-     * 2. Build a RequestItem and call batchWrite.
-     */
-    return documentClient
-      .query({
-        TableName: this.eventsTableConfig.tableName,
-        ProjectionExpression: "aggregateId, #sequence",
-        KeyConditionExpression: "aggregateId = :aggregateId AND #sequence <= :sequence",
-        ExpressionAttributeNames: {
-          "#sequence": "sequence"
-        },
-        ExpressionAttributeValues: {
-          ":aggregateId": eventKey.aggregateId,
-          ":sequence": eventKey.sequence
-        }
-      })
-      .promise()
-      .then((dbResult) => {
-        const events = dbResult.Items as Event[];
-
-        // no further actions if there are no events to be deleted
-        if (events.length === 0) {
-          return;
-        }
-
-        // Build the RequestItems request. One DeleteRequest per event
-        const requestItems = {};
-        requestItems[this.eventsTableConfig.tableName] = events.map((event) => {
-          return {
-            DeleteRequest: {
-              Key: event
-            }
-          };
-        });
-
-        return this.retryBatchWrite(requestItems);
-      })
-      .then((batchResponse) => {
-        // TODO handle response?
-        return;
-      });
   }
 
   public get(eventKey: EventKey): Promise<Option<Event>> {
@@ -170,6 +36,25 @@ export class EventDynamoDBStore extends DynamoDBStore implements EventStore {
       .promise()
       .then((dbResult) => {
         return dbResult.Item ? some(dbResult.Item as Event) : none;
+      });
+  }
+
+  public getById(eventId: EventId): Promise<Option<Event>> {
+    const documentClient = new DynamoDB.DocumentClient();
+
+    return documentClient
+      .query({
+        TableName: this.eventsTableConfig.tableName,
+        IndexName: "EventIdIndex",
+        KeyConditionExpression: "eventId = :eventId",
+        ExpressionAttributeValues: {
+          ":eventId": eventId
+        },
+        Limit: 1
+      })
+      .promise()
+      .then((result) => {
+        return result.Items && result.Items.length > 0 ? some(result.Items[0] as Event) : none;
       });
   }
 
@@ -219,6 +104,177 @@ export class EventDynamoDBStore extends DynamoDBStore implements EventStore {
       .promise()
       .then((dbResult) => {
         return dbResult.Items as Event[];
+      });
+  }
+
+  public save(event: Event): Promise<void> {
+    const documentClient = new DynamoDB.DocumentClient();
+
+    return documentClient
+      .put({
+        TableName: this.eventsTableConfig.tableName,
+        Item: event
+      })
+      .promise()
+      .then((dbResult) => {
+        return;
+      });
+  }
+
+  public saveBatch(events: Event[]): Promise<EventStoreBatchResponse> {
+    if (!events || events.length === 0) {
+      return Promise.resolve({});
+    }
+
+    // Build the RequestItems request. One PutRequest per event
+    const requestItems: any = {};
+    requestItems[this.eventsTableConfig.tableName] = events.map((event) => {
+      return {
+        PutRequest: {
+          Item: event
+        }
+      };
+    });
+
+    return this.retryBatchWrite(requestItems).then((response) => {
+      return this.toEventStoreBatchResponse(events, response);
+    });
+  }
+
+  public remove(eventKey: EventKey): Promise<void> {
+    const documentClient = new DynamoDB.DocumentClient();
+
+    return documentClient
+      .delete({
+        TableName: this.eventsTableConfig.tableName,
+        Key: eventKey
+      })
+      .promise()
+      .then((dbResult) => {
+        return;
+      });
+  }
+
+  public removeById(eventId: EventId): Promise<void> {
+    return this.getById(eventId).then((eventOpt) => {
+      return eventOpt.foldL(
+        () => Promise.resolve(),
+        (event) => this.remove({ aggregateId: event.aggregateId, sequence: event.sequence })
+      );
+    });
+  }
+
+  public removeBatch(events: Event[]): Promise<EventStoreBatchResponse> {
+    if (!events || events.length === 0) {
+      return Promise.resolve({});
+    }
+
+    // Build the RequestItems request. One DeleteRequest per event
+    const requestItems: any = {};
+    requestItems[this.eventsTableConfig.tableName] = events.map((event) => {
+      return {
+        DeleteRequest: {
+          Key: event
+        }
+      };
+    });
+
+    return this.retryBatchWrite(requestItems).then((response) => {
+      return this.toEventStoreBatchResponse(events, response);
+    });
+  }
+
+  public rollbackTo(eventKey: EventKey): Promise<void> {
+    const documentClient = new DynamoDB.DocumentClient();
+
+    /**
+     * 1. Get all events to be rolled back.
+     * 2. Build a RequestItem and call batchWrite.
+     */
+    return documentClient
+      .query({
+        TableName: this.eventsTableConfig.tableName,
+        ProjectionExpression: "aggregateId, #sequence",
+        KeyConditionExpression: "aggregateId = :aggregateId AND #sequence >= :sequence",
+        ExpressionAttributeNames: {
+          "#sequence": "sequence"
+        },
+        ExpressionAttributeValues: {
+          ":aggregateId": eventKey.aggregateId,
+          ":sequence": eventKey.sequence
+        }
+      })
+      .promise()
+      .then((dbResult) => {
+        const events = dbResult.Items as Event[];
+
+        // no further actions if there are no events to be deleted
+        if (events.length === 0) {
+          return;
+        }
+
+        // Build the RequestItems request. One DeleteRequest per event
+        const requestItems: any = {};
+        requestItems[this.eventsTableConfig.tableName] = events.map((event) => {
+          return {
+            DeleteRequest: {
+              Key: event
+            }
+          };
+        });
+
+        return this.retryBatchWrite(requestItems);
+      })
+      .then(() => {
+        // TODO handle response?
+        return;
+      });
+  }
+
+  public rollforwardTo(eventKey: EventKey): Promise<void> {
+    const documentClient = new DynamoDB.DocumentClient();
+
+    /**
+     * 1. Get all events to be rolled forward.
+     * 2. Build a RequestItem and call batchWrite.
+     */
+    return documentClient
+      .query({
+        TableName: this.eventsTableConfig.tableName,
+        ProjectionExpression: "aggregateId, #sequence",
+        KeyConditionExpression: "aggregateId = :aggregateId AND #sequence <= :sequence",
+        ExpressionAttributeNames: {
+          "#sequence": "sequence"
+        },
+        ExpressionAttributeValues: {
+          ":aggregateId": eventKey.aggregateId,
+          ":sequence": eventKey.sequence
+        }
+      })
+      .promise()
+      .then((dbResult) => {
+        const events = dbResult.Items as Event[];
+
+        // no further actions if there are no events to be deleted
+        if (events.length === 0) {
+          return;
+        }
+
+        // Build the RequestItems request. One DeleteRequest per event
+        const requestItems: any = {};
+        requestItems[this.eventsTableConfig.tableName] = events.map((event) => {
+          return {
+            DeleteRequest: {
+              Key: event
+            }
+          };
+        });
+
+        return this.retryBatchWrite(requestItems);
+      })
+      .then((batchResponse) => {
+        // TODO handle response?
+        return;
       });
   }
 

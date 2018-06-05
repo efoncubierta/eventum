@@ -9,7 +9,8 @@ import {
   PutItemOutput,
   QueryOutput,
   ScanOutput,
-  BatchWriteItemOutput
+  BatchWriteItemOutput,
+  DeleteItemInput
 } from "aws-sdk/clients/dynamodb";
 
 export type Callback = (err: AWSError | null, data?: any) => void;
@@ -19,6 +20,8 @@ export interface AWSDocumentClientMock {
   handleGet(params: GetItemInput, callback: Callback): void;
   canHandlePut(params: PutItemInput): boolean;
   handlePut(params: PutItemInput, callback: Callback): void;
+  canHandleDelete(params: DeleteItemInput): boolean;
+  handleDelete(params: DeleteItemInput, callback: Callback): void;
   canHandleQuery(params: QueryInput): boolean;
   handleQuery(params: QueryInput, callback: Callback): void;
   canHandleScan(params: ScanInput): boolean;

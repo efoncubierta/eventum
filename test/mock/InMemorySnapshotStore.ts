@@ -1,4 +1,4 @@
-import { Snapshot } from "../../src/model/Snapshot";
+import { Snapshot, SnapshotKey, SnapshotId } from "../../src/model/Snapshot";
 
 /**
  * Manage snapshot data in memory.
@@ -9,12 +9,22 @@ export class InMemorySnapshotStore {
   /**
    * Get a snapshot from the in-memory snapshots array.
    *
-   * @param aggregateId Aggregate ID
-   * @param sequence Sequence
+   * @param snapshotKey Snapshot key
    */
-  public static getSnapshot(aggregateId: string, sequence: number): Snapshot {
+  public static getSnapshot(snapshotKey: SnapshotKey): Snapshot {
     return this.snapshots.find((snapshot) => {
-      return snapshot.aggregateId === aggregateId && snapshot.sequence === sequence;
+      return snapshot.aggregateId === snapshotKey.aggregateId && snapshot.sequence === snapshotKey.sequence;
+    });
+  }
+
+  /**
+   * Get a snapshot from the in-memory snapshots array.
+   *
+   * @param snapshotId Snapshot ID
+   */
+  public static getSnapshotById(snapshotId: SnapshotId): Snapshot {
+    return this.snapshots.find((snapshot) => {
+      return snapshot.snapshotId === snapshotId;
     });
   }
 
@@ -25,19 +35,32 @@ export class InMemorySnapshotStore {
    * @param snapshot Snapshot
    */
   public static putSnapshot(snapshot: Snapshot): void {
-    this.deleteSnapshot(snapshot.aggregateId, snapshot.sequence);
+    this.deleteSnapshot({
+      aggregateId: snapshot.aggregateId,
+      sequence: snapshot.sequence
+    });
     this.snapshots.push(snapshot);
   }
 
   /**
    * Delete an snapshot from the in-memory snapshots array.
    *
-   * @param aggregateId Aggregate ID
-   * @param sequence Sequence
+   * @param snapshotKey Snapshot key
    */
-  public static deleteSnapshot(aggregateId: string, sequence: number): void {
+  public static deleteSnapshot(snapshotKey: SnapshotKey): void {
     this.snapshots = this.snapshots.filter((e) => {
-      return !(e.aggregateId === aggregateId && e.sequence === sequence);
+      return !(e.aggregateId === snapshotKey.aggregateId && e.sequence === snapshotKey.sequence);
+    });
+  }
+
+  /**
+   * Delete an snapshot from the in-memory snapshots array.
+   *
+   * @param snapshotId Snapshot ID
+   */
+  public static deleteSnapshotByID(snapshotId: SnapshotId): void {
+    this.snapshots = this.snapshots.filter((e) => {
+      return !(e.snapshotId === snapshotId);
     });
   }
 

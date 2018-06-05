@@ -35,13 +35,8 @@ function snapshotDynamoDBStoreTests() {
       AWSMock.restoreMock();
     });
 
-    it("get() should resolve to null for a random aggregateId and sequence", () => {
-      const aggregateId = TestDataGenerator.randomAggregateId();
-      const sequence = TestDataGenerator.randomSequence();
-      const snapshotKey: SnapshotKey = {
-        aggregateId,
-        sequence
-      };
+    it("get() should resolve to None for a random SnapshotKey", () => {
+      const snapshotKey = TestDataGenerator.randomSnapshotKey();
 
       return snapshotStore.get(snapshotKey).then((snapshotOpt) => {
         chai.should().exist(snapshotOpt);
@@ -49,7 +44,16 @@ function snapshotDynamoDBStoreTests() {
       });
     });
 
-    it("getLatest() should resolve to null for a random aggregateId", () => {
+    it("getById() should resolve to None for a random SnapshotId", () => {
+      const snapshotId = TestDataGenerator.randomSnapshotId();
+
+      return snapshotStore.getById(snapshotId).then((snapshotOpt) => {
+        chai.should().exist(snapshotOpt);
+        snapshotOpt.isNone().should.be.true;
+      });
+    });
+
+    it("getLatest() should resolve to None for a random aggregateId", () => {
       const aggregateId = TestDataGenerator.randomAggregateId();
 
       return snapshotStore.getLatest(aggregateId).then((snapshotOpt) => {
@@ -82,7 +86,7 @@ function snapshotDynamoDBStoreTests() {
         });
     });
 
-    it("save() should save a snapshot", () => {
+    it("save()/remove() should save and remove an snapshot by its SnapshotKey", () => {
       const snapshot = TestDataGenerator.randomSnapshot();
       const snapshotKey: SnapshotKey = {
         aggregateId: snapshot.aggregateId,
@@ -94,12 +98,47 @@ function snapshotDynamoDBStoreTests() {
         .then(() => {
           return snapshotStore.get(snapshotKey);
         })
-        .then((savedSnapshotOpt) => {
-          savedSnapshotOpt.should.exist;
-          savedSnapshotOpt.isSome().should.be.true;
+        .then((snapshotOpt) => {
+          snapshotOpt.should.exist;
+          snapshotOpt.isSome().should.be.true;
 
-          const s = savedSnapshotOpt.getOrElse(null);
+          const s = snapshotOpt.getOrElse(null);
           s.should.be.eql(snapshot);
+
+          return snapshotStore.remove(snapshotKey);
+        })
+        .then(() => {
+          return snapshotStore.get(snapshotKey);
+        })
+        .then((snapshotOpt) => {
+          snapshotOpt.should.exist;
+          snapshotOpt.isNone().should.be.true;
+        });
+    });
+
+    it("save()/removeById() should save and remove an snapshot by its SnapshotId", () => {
+      const snapshot = TestDataGenerator.randomSnapshot();
+
+      return snapshotStore
+        .save(snapshot)
+        .then(() => {
+          return snapshotStore.getById(snapshot.snapshotId);
+        })
+        .then((snapshotOpt) => {
+          snapshotOpt.should.exist;
+          snapshotOpt.isSome().should.be.true;
+
+          const s = snapshotOpt.getOrElse(null);
+          s.should.be.eql(snapshot);
+
+          return snapshotStore.removeById(snapshot.snapshotId);
+        })
+        .then(() => {
+          return snapshotStore.getById(snapshot.snapshotId);
+        })
+        .then((snapshotOpt) => {
+          snapshotOpt.should.exist;
+          snapshotOpt.isNone().should.be.true;
         });
     });
 

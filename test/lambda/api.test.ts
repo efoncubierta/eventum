@@ -170,7 +170,7 @@ function apiTests() {
     });
 
     it("saveEvents() should save a batch of events", () => {
-      const sampleSize = 20;
+      const sampleSize = 10;
       const aggregateId = TestDataGenerator.randomAggregateId();
       const eventInputs = TestDataGenerator.randomEventInputArray(sampleSize, aggregateId);
       const eventKey = TestDataGenerator.randomEventKey(aggregateId, 1);
@@ -223,9 +223,9 @@ function apiTests() {
 
     it("saveSnapshot() should save a snapshot and get a valid journal", () => {
       // const retentionCount = Eventum.config().snapshot.retention.count;
-      const sampleSize = 20;
+      const sampleSize = 10;
       const aggregateId = TestDataGenerator.randomAggregateId();
-      const snapshotSequence = sampleSize - 10;
+      const snapshotSequence = sampleSize - 5;
       const eventInputs = TestDataGenerator.randomEventInputArray(sampleSize, aggregateId);
       const snapshotInput = TestDataGenerator.randomSnapshotInput(aggregateId, snapshotSequence);
       const snapshotKey = TestDataGenerator.randomSnapshotKey(aggregateId, snapshotSequence);
@@ -288,7 +288,7 @@ function apiTests() {
               snapshot.aggregateId.should.equal(aggregateId);
               snapshot.sequence.should.equal(snapshotSequence);
 
-              journal.events.length.should.equals(10);
+              journal.events.length.should.equals(5);
             }
           })
       );

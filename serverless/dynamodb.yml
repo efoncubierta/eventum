@@ -4,6 +4,8 @@ Resources:
     Properties:
       TableName: ${self:custom.aws.dynamodb.events.tableName}
       AttributeDefinitions:
+        - AttributeName: eventId
+          AttributeType: S
         - AttributeName: aggregateId
           AttributeType: S
         - AttributeName: sequence
@@ -13,6 +15,16 @@ Resources:
           KeyType: HASH
         - AttributeName: sequence
           KeyType: RANGE
+      GlobalSecondaryIndexes:
+        - IndexName: EventIdIndex
+          KeySchema:
+            - AttributeName: eventId
+              KeyType: HASH
+          Projection:
+            ProjectionType: KEYS_ONLY
+          ProvisionedThroughput:
+            ReadCapacityUnits: 1
+            WriteCapacityUnits: 1
       ProvisionedThroughput:
         ReadCapacityUnits: 1
         WriteCapacityUnits: 1
@@ -24,6 +36,8 @@ Resources:
     Properties:
       TableName: ${self:custom.aws.dynamodb.snapshots.tableName}
       AttributeDefinitions:
+        - AttributeName: snapshotId
+          AttributeType: S
         - AttributeName: aggregateId
           AttributeType: S
         - AttributeName: sequence
@@ -33,6 +47,16 @@ Resources:
           KeyType: HASH
         - AttributeName: sequence
           KeyType: RANGE
+      GlobalSecondaryIndexes:
+        - IndexName: SnapshotIdIndex
+          KeySchema:
+            - AttributeName: snapshotId
+              KeyType: HASH
+          Projection:
+            ProjectionType: KEYS_ONLY
+          ProvisionedThroughput:
+            ReadCapacityUnits: 1
+            WriteCapacityUnits: 1
       ProvisionedThroughput:
         ReadCapacityUnits: 1
         WriteCapacityUnits: 1

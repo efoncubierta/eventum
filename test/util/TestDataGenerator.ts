@@ -1,6 +1,6 @@
 import * as faker from "faker";
-import { Event, EventKey, EventInput } from "../../src/model/Event";
-import { Snapshot, SnapshotKey, SnapshotInput } from "../../src/model/Snapshot";
+import { Event, EventKey, EventInput, EventId } from "../../src/model/Event";
+import { Snapshot, SnapshotKey, SnapshotInput, SnapshotId } from "../../src/model/Snapshot";
 import { Journal, JournalKey } from "../../src/model/Journal";
 
 export class TestDataGenerator {
@@ -51,6 +51,10 @@ export class TestDataGenerator {
     return events;
   }
 
+  public static randomEventId(): EventId {
+    return this.randomUUID();
+  }
+
   public static randomEventKey(aggregateId?: string, sequence?: number): EventKey {
     return {
       aggregateId: aggregateId || this.randomAggregateId(),
@@ -87,6 +91,10 @@ export class TestDataGenerator {
     };
   }
 
+  public static randomSnapshotId(): SnapshotId {
+    return this.randomUUID();
+  }
+
   public static randomSnapshotKey(aggregateId?: string, sequence?: number): SnapshotKey {
     return {
       aggregateId: aggregateId || this.randomAggregateId(),
@@ -102,7 +110,7 @@ export class TestDataGenerator {
     };
   }
 
-  public static randomSnapshots(size: number, aggregateId?: string, fromSequence?: number): Snapshot[] {
+  public static randomSnapshotArray(size: number, aggregateId?: string, fromSequence?: number): Snapshot[] {
     let seedSequence = fromSequence && fromSequence > 0 ? fromSequence : 0;
     const snapshots: Snapshot[] = [];
     for (let i = 0; i < size; i++, seedSequence++) {

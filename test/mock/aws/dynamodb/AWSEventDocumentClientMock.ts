@@ -9,10 +9,11 @@ import {
   PutItemOutput,
   QueryOutput,
   ScanOutput,
-  BatchWriteItemOutput
+  BatchWriteItemOutput,
+  DeleteItemInput
 } from "aws-sdk/clients/dynamodb";
 
-import { Event } from "../../../../src/model/Event";
+import { Event, EventKey } from "../../../../src/model/Event";
 
 import { AWSDocumentClientMock, Callback } from "./AWSDocumentClientMock";
 import { InMemoryEventStore } from "../../InMemoryEventStore";
@@ -25,11 +26,9 @@ export class AWSEventDocumentClientMock implements AWSDocumentClientMock {
   }
 
   public handleGet(params: GetItemInput, callback: Callback): void {
-    // EventDynamoDBStore.getEvent()
-    const aggregateId = params.Key.aggregateId as string;
-    const sequence = params.Key.sequence as number;
+    const eventKey = params.Key as EventKey;
 
-    const event = InMemoryEventStore.getEvent(aggregateId, sequence);
+    const event = InMemoryEventStore.getEvent(eventKey);
 
     callback(null, {
       Item: event
@@ -37,11 +36,29 @@ export class AWSEventDocumentClientMock implements AWSDocumentClientMock {
   }
 
   public canHandlePut(params: PutItemInput): boolean {
-    return false;
+    return params.TableName === AWSEventDocumentClientMock.TABLE_NAME;
   }
 
   public handlePut(params: PutItemInput, callback: Callback): void {
-    throw new Error("Method not implemented.");
+    const event = params.Item as any;
+
+    InMemoryEventStore.putEvent(event);
+
+    callback(null, {
+      Item: event
+    });
+  }
+
+  public canHandleDelete(params: DeleteItemInput): boolean {
+    return params.TableName === AWSEventDocumentClientMock.TABLE_NAME;
+  }
+
+  public handleDelete(params: DeleteItemInput, callback: Callback): void {
+    const eventKey = params.Key as EventKey;
+
+    InMemoryEventStore.deleteEvent(eventKey);
+
+    callback(null, {});
   }
 
   public canHandleQuery(params: QueryInput): boolean {
@@ -49,7 +66,11 @@ export class AWSEventDocumentClientMock implements AWSDocumentClientMock {
   }
 
   public handleQuery(params: QueryInput, callback: Callback): void {
-    if (
+    if (params.IndexName === "EventIdIndex") {
+      const eventId = params.ExpressionAttributeValues[":eventId"] as string;
+      const event = InMemoryEventStore.getEventById(eventId);
+      callback(null, { Items: event ? [event] : undefined });
+    } else if (
       params.KeyConditionExpression === "aggregateId = :aggregateId AND #sequence BETWEEN :fromSequence AND :toSequence"
     ) {
       // EventDynamoDBStore.getEvents()
@@ -122,16 +143,23 @@ export class AWSEventDocumentClientMock implements AWSDocumentClientMock {
     const unprocessedItems = {};
     const requestItems: any[] = params.RequestItems[AWSEventDocumentClientMock.TABLE_NAME];
 
-    requestItems.forEach((requestItem) => {
+    // mimic failures in batch writing
+    const failN = Math.ceil(requestItems.length / 10);
+    const itemsToProcess = requestItems.slice(0, 10);
+    const itemsToUnprocess = requestItems.slice(10);
+    if (itemsToUnprocess.length > 0) {
+      unprocessedItems[AWSEventDocumentClientMock.TABLE_NAME] = itemsToUnprocess;
+    }
+
+    itemsToProcess.forEach((requestItem) => {
       if (requestItem.PutRequest) {
         const item = requestItem.PutRequest.Item;
 
         InMemoryEventStore.putEvent(item as Event);
       } else if (requestItem.DeleteRequest) {
-        const aggregateId: string = requestItem.DeleteRequest.Key.aggregateId;
-        const sequence: number = requestItem.DeleteRequest.Key.sequence;
+        const eventKey: EventKey = requestItem.DeleteRequest.Key;
 
-        InMemoryEventStore.deleteEvent(aggregateId, sequence);
+        InMemoryEventStore.deleteEvent(eventKey);
       } else {
         console.warn("Ignored RequestItem " + requestItem);
       }

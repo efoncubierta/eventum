@@ -9,10 +9,11 @@ import {
   PutItemOutput,
   QueryOutput,
   ScanOutput,
-  BatchWriteItemOutput
+  BatchWriteItemOutput,
+  DeleteItemInput
 } from "aws-sdk/clients/dynamodb";
 
-import { Snapshot } from "../../../../src/model/Snapshot";
+import { Snapshot, SnapshotKey } from "../../../../src/model/Snapshot";
 
 import { AWSDocumentClientMock, Callback } from "./AWSDocumentClientMock";
 import { InMemorySnapshotStore } from "../../InMemorySnapshotStore";
@@ -26,10 +27,9 @@ export class AWSSnapshotDocumentClientMock implements AWSDocumentClientMock {
 
   public handleGet(params: GetItemInput, callback: Callback): void {
     // SnapshotDynamoDBStore.get()
-    const aggregateId: string = params.Key.aggregateId as string;
-    const sequence: number = params.Key.sequence as number;
+    const snapshotKey = params.Key as SnapshotKey;
 
-    const snapshot = InMemorySnapshotStore.getSnapshot(aggregateId, sequence);
+    const snapshot = InMemorySnapshotStore.getSnapshot(snapshotKey);
 
     callback(null, {
       Item: snapshot
@@ -47,12 +47,28 @@ export class AWSSnapshotDocumentClientMock implements AWSDocumentClientMock {
     callback(null, {});
   }
 
+  public canHandleDelete(params: DeleteItemInput): boolean {
+    return params.TableName === AWSSnapshotDocumentClientMock.TABLE_NAME;
+  }
+
+  public handleDelete(params: DeleteItemInput, callback: Callback): void {
+    const snapshotKey = params.Key as SnapshotKey;
+
+    InMemorySnapshotStore.deleteSnapshot(snapshotKey);
+
+    callback(null, {});
+  }
+
   public canHandleQuery(params: QueryInput): boolean {
     return params.TableName === AWSSnapshotDocumentClientMock.TABLE_NAME;
   }
 
   public handleQuery(params: QueryInput, callback: Callback): void {
-    if (params.KeyConditionExpression === "aggregateId = :aggregateId" && params.Limit === 1) {
+    if (params.IndexName === "SnapshotIdIndex") {
+      const snapshotId = params.ExpressionAttributeValues[":snapshotId"] as string;
+      const snapshot = InMemorySnapshotStore.getSnapshotById(snapshotId);
+      callback(null, { Items: snapshot ? [snapshot] : undefined });
+    } else if (params.KeyConditionExpression === "aggregateId = :aggregateId" && params.Limit === 1) {
       // SnapshotDynamoDBStore.getLatest()
       const aggregateId = params.ExpressionAttributeValues[":aggregateId"] as string;
 
@@ -98,10 +114,9 @@ export class AWSSnapshotDocumentClientMock implements AWSDocumentClientMock {
 
         InMemorySnapshotStore.putSnapshot(snapshot);
       } else if (requestItem.DeleteRequest) {
-        const aggregateId: string = requestItem.DeleteRequest.Key.aggregateId;
-        const sequence: number = requestItem.DeleteRequest.Key.sequence;
+        const snapshotKey: SnapshotKey = requestItem.DeleteRequest.Key;
 
-        InMemorySnapshotStore.deleteSnapshot(aggregateId, sequence);
+        InMemorySnapshotStore.deleteSnapshot(snapshotKey);
       } else {
         console.warn("Ignored RequestItem " + requestItem);
       }

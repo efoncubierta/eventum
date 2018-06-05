@@ -39,11 +39,12 @@ function journalServiceTests() {
       });
     });
 
-    it("getEvent() should return null for a random aggregateId", () => {
+    it("getEvent() should return null for a random EventKey", () => {
       const aggregateId = TestDataGenerator.randomAggregateId();
+      const sequence = TestDataGenerator.randomSequence();
       const eventKey: EventKey = {
         aggregateId,
-        sequence: 0
+        sequence
       };
 
       return JournalService.getEvent(eventKey).then((eventOpt) => {
@@ -72,9 +73,9 @@ function journalServiceTests() {
     });
 
     it("saveEvents() should save a sequence of correlated events, save snapshot from one of them and get a valid journal", () => {
-      const sampleSize = 20;
+      const sampleSize = 10;
       const aggregateId = TestDataGenerator.randomAggregateId();
-      const snapshotSequence = sampleSize - 10;
+      const snapshotSequence = sampleSize - 5;
       const eventInputs = TestDataGenerator.randomEventInputArray(sampleSize, aggregateId);
       const snapshotInput = TestDataGenerator.randomSnapshotInput(aggregateId, snapshotSequence);
       const snapshotKey: SnapshotKey = {
@@ -112,18 +113,14 @@ function journalServiceTests() {
           s.aggregateId.should.equal(aggregateId);
           s.sequence.should.equal(snapshotSequence);
 
-          j.events.length.should.equals(10);
+          j.events.length.should.equals(5);
         });
     });
 
     it("saveEvents() should save a sequence of correlated not sorted events for different aggregates", () => {
-      const sampleSize = 10;
+      const sampleSize = 5;
 
-      const aggregateIds = [
-        TestDataGenerator.randomAggregateId(),
-        TestDataGenerator.randomAggregateId(),
-        TestDataGenerator.randomAggregateId()
-      ];
+      const aggregateIds = [TestDataGenerator.randomAggregateId(), TestDataGenerator.randomAggregateId()];
 
       // build dictionary of event inputs for validation
       let events = [];

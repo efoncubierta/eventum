@@ -10,7 +10,8 @@ import {
   PutItemOutput,
   QueryOutput,
   ScanOutput,
-  BatchWriteItemOutput
+  BatchWriteItemOutput,
+  DeleteItemInput
 } from "aws-sdk/clients/dynamodb";
 
 import { Eventum } from "../../../../src/Eventum";
@@ -54,6 +55,22 @@ export class AWSDynamoDBMock {
       AWSDynamoDBMock.snapshotDocumentClientMock.handlePut(params, callback);
     } else {
       return callback(new AWSError("This DocumentClient.put() call hasn't been mocked."));
+    }
+  }
+
+  /**
+   * Mock the DocumentClient.delete() call.
+   *
+   * @param params DocumentClient.delete() input parameters
+   * @param callback Callback
+   */
+  private static documentClientDeleteMock(params: DeleteItemInput, callback: Callback): void {
+    if (AWSDynamoDBMock.eventDocumentClientMock.canHandleDelete(params)) {
+      AWSDynamoDBMock.eventDocumentClientMock.handleDelete(params, callback);
+    } else if (AWSDynamoDBMock.snapshotDocumentClientMock.canHandleDelete(params)) {
+      AWSDynamoDBMock.snapshotDocumentClientMock.handleDelete(params, callback);
+    } else {
+      return callback(new AWSError("This DocumentClient.delete() call hasn't been mocked."));
     }
   }
 
@@ -111,6 +128,7 @@ export class AWSDynamoDBMock {
   public static enableMock(): void {
     AWS.mock("DynamoDB.DocumentClient", "get", AWSDynamoDBMock.documentClientGetMock);
     AWS.mock("DynamoDB.DocumentClient", "put", AWSDynamoDBMock.documentClientPutMock);
+    AWS.mock("DynamoDB.DocumentClient", "delete", AWSDynamoDBMock.documentClientDeleteMock);
     AWS.mock("DynamoDB.DocumentClient", "query", AWSDynamoDBMock.documentClientQueryMock);
     AWS.mock("DynamoDB.DocumentClient", "scan", AWSDynamoDBMock.documentClientScanMock);
     AWS.mock("DynamoDB.DocumentClient", "batchWrite", AWSDynamoDBMock.documentClientBatchWriteMock);

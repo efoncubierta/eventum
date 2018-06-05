@@ -2,7 +2,7 @@
 import { Option } from "fp-ts/lib/Option";
 
 // Eventum models
-import { Snapshot, SnapshotKey } from "../model/Snapshot";
+import { Snapshot, SnapshotKey, SnapshotId } from "../model/Snapshot";
 
 /**
  * Manage snapshots in a data store.
@@ -16,6 +16,15 @@ export interface SnapshotStore {
    * @returns Promise with an optional snapshot.
    */
   get(snapshotKey: SnapshotKey): Promise<Option<Snapshot>>;
+
+  /**
+   * Get a snapshot by its unique ID.
+   *
+   * @param snapshotId Snapshot unique ID
+   *
+   * @return Promise that will resolve to an optional snapshot.
+   */
+  getById(snapshotId: SnapshotId): Promise<Option<Snapshot>>;
 
   /**
    * Get the latest snapshot of an aggregate.
@@ -34,6 +43,24 @@ export interface SnapshotStore {
    * @returns Promise that will be rejected if any error occurrs.
    */
   save(snapshot: Snapshot): Promise<void>;
+
+  /**
+   * Remove a snapshot.
+   *
+   * @param snapshotKey Snapshot key
+   *
+   * @returns Promise that will be rejected if any error occurr.
+   */
+  remove(snapshotKey: SnapshotKey): Promise<void>;
+
+  /**
+   * Remove a snapshot by its unique ID.
+   *
+   * @param snapshotId Snapshot unique ID
+   *
+   * @returns Promise that will be rejected if any error occurr.
+   */
+  removeById(snapshotId: SnapshotId): Promise<void>;
 
   /**
    * Purge redundant aggregates.

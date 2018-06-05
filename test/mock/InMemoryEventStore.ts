@@ -1,4 +1,4 @@
-import { Event } from "../../src/model/Event";
+import { Event, EventKey, EventId } from "../../src/model/Event";
 
 /**
  * Manage journal data in memory.
@@ -13,32 +13,56 @@ export class InMemoryEventStore {
    * @param event Event
    */
   public static putEvent(event: Event): void {
-    this.deleteEvent(event.aggregateId, event.sequence);
+    this.deleteEvent({
+      aggregateId: event.aggregateId,
+      sequence: event.sequence
+    });
     this.events.push(event);
   }
 
   /**
    * Delete an event from the in-memory journals array.
    *
-   * @param aggregateId Aggregate ID
-   * @param sequence Sequence
+   * @param eventKey Event key
    */
-  public static deleteEvent(aggregateId: string, sequence: number): void {
+  public static deleteEvent(eventKey: EventKey): void {
     this.events = this.events.filter((e) => {
-      return !(e.aggregateId === aggregateId && e.sequence === sequence);
+      return !(e.aggregateId === eventKey.aggregateId && e.sequence === eventKey.sequence);
+    });
+  }
+
+  /**
+   * Delete an event from the in-memory journals array.
+   *
+   * @param eventId Event ID
+   */
+  public static deleteEventById(eventId: EventId): void {
+    this.events = this.events.filter((e) => {
+      return !(e.eventId === eventId);
     });
   }
 
   /**
    * Get an event from the in-memory journals array.
    *
-   * @param aggregateId Aggregate ID
-   * @param sequence Sequence
+   * @param eventKey Event key
    * @return Event object or null if it doesn't exist
    */
-  public static getEvent(aggregateId: string, sequence: number): Event {
+  public static getEvent(eventKey: EventKey): Event {
     return this.events.find((event) => {
-      return event.aggregateId === aggregateId && event.sequence === sequence;
+      return event.aggregateId === eventKey.aggregateId && event.sequence === eventKey.sequence;
+    });
+  }
+
+  /**
+   * Get an event by its ID from the in-memory journals array.
+   *
+   * @param eventId Event unique ID
+   * @return Event object or null if it doesn't exist
+   */
+  public static getEventById(eventId: EventId): Event {
+    return this.events.find((event) => {
+      return event.eventId === eventId;
     });
   }
 

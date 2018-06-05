@@ -2,19 +2,67 @@
 import { Option } from "fp-ts/lib/Option";
 
 // Eventum models
-import { Event, EventKey } from "../model/Event";
+import { Event, EventKey, EventId } from "../model/Event";
 
-export interface StoreBatchResponse<T> {
-  succeededItems?: T[];
-  failedItems?: T[];
-}
+// Eventum stores
+import { StoreBatchResponse } from "./StoreBatchResponse";
 
 export type EventStoreBatchResponse = StoreBatchResponse<Event>;
 
 /**
- * Manage events in a data store.
+ * Manage events in a data store. Each provider must implement this interface.
  */
 export interface EventStore {
+  /**
+   * Get an event.
+   *
+   * @param eventKey Event key
+   *
+   * @return Promise that will resolve to an optional event.
+   */
+  get(eventKey: EventKey): Promise<Option<Event>>;
+
+  /**
+   * Get an event by its unique ID.
+   *
+   * @param eventId Event unique ID
+   *
+   * @return Promise that will resolve to an optional event.
+   */
+  getById(eventId: EventId): Promise<Option<Event>>;
+
+  /**
+   * Get the last event for a particular aggregate.
+   *
+   * @param aggregateId Aggregate ID
+   *
+   * @return Promise that will resolve to an optional event.
+   */
+  getLast(aggregateId: string): Promise<Option<Event>>;
+
+  /**
+   * Get a range of events for a particular aggregate.
+   *
+   * @param aggregateId Aggregate ID
+   * @param fromSequence Start sequence number. Default is 0
+   * @param toSequence End sequence number. Default is Number.MAX_SAFE_INTEGER
+   *
+   * @return Promise that will resolve to a list of events. An empty list will be returned if no
+   * events are found.
+   */
+  getRange(aggregateId: string, fromSequence?: number, toSequence?: number): Promise<Event[]>;
+
+  /**
+   * Save an event.
+   *
+   * The event doesn't need to be validated, that's {@link JournalService}'s job.
+   *
+   * @param event Event
+   *
+   * @returns Promise that will be rejected if any error occurr.
+   */
+  save(event: Event): Promise<void>;
+
   /**
    * Save a batch of events.
    *
@@ -31,11 +79,29 @@ export interface EventStore {
    *
    * @param events Array of events
    *
-   * @returns Promise with the batch summary details. A rejected promise can potentially leave the store in an
-   * inconsistent state when the data store saves each event in its own atomic transaction. It is up the caller
-   * how to manage the error.
+   * @returns Promise with the batch summary details. The promise will be rejected if any error ocurr. A rejected
+   * promise can potentially leave the store in an inconsistent state when the data store saves each event in its
+   * own atomic transaction. It is up the caller how to manage the error.
    */
   saveBatch(events: Event[]): Promise<EventStoreBatchResponse>;
+
+  /**
+   * Remove an event.
+   *
+   * @param eventKey Event key
+   *
+   * @returns Promise that will be rejected if any error occurr.
+   */
+  remove(eventKey: EventKey): Promise<void>;
+
+  /**
+   * Remove an event by its unique ID.
+   *
+   * @param eventId Event unique ID
+   *
+   * @returns Promise that will be rejected if any error occurr.
+   */
+  removeById(eventId: EventId): Promise<void>;
 
   /**
    * Remove a batch of events.
@@ -50,9 +116,9 @@ export interface EventStore {
    *
    * @param events Array of events
    *
-   * @returns Promise with the batch summary details. A rejected promise can potentially leave the store in an
-   * inconsistent state when the data store saves each event in its own atomic transaction. It is up the caller
-   * how to manage the error.
+   * @returns Promise with the batch summary details. The promise will be rejected if any error ocurr. A rejected
+   * promise can potentially leave the store in an inconsistent state when the data store saves each event in its
+   * own atomic transaction. It is up the caller how to manage the error.
    */
   removeBatch(events: Event[]): Promise<EventStoreBatchResponse>;
 
@@ -77,34 +143,4 @@ export interface EventStore {
    * @returns Promise that will be rejected if an error happens during the roll-forward process.
    */
   rollforwardTo(eventKey: EventKey): Promise<void>;
-
-  /**
-   * Get an event.
-   *
-   * @param eventKey Event key
-   *
-   * @return Promise that will resolve to an optional event.
-   */
-  get(eventKey: EventKey): Promise<Option<Event>>;
-
-  /**
-   * Get the last event for a particular aggregate.
-   *
-   * @param aggregateId Aggregate ID
-   *
-   * @return Promise that will resolve to an optional event.
-   */
-  getLast(aggregateId: string): Promise<Option<Event>>;
-
-  /**
-   * Get a range of events for a particular aggregate.
-   *
-   * @param aggregateId Aggregate ID
-   * @param fromSequence Start sequence number. Default is 0
-   * @param toSequence End sequence number. Default is Number.MAX_SAFE_INTEGER
-   *
-   * @return Promise that will resolve to a list of events. An empty list will be returned if no
-   * events are found.
-   */
-  getRange(aggregateId: string, fromSequence?: number, toSequence?: number): Promise<Event[]>;
 }

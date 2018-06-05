@@ -12,7 +12,7 @@ import { DynamoDBStore } from "./DynamoDBStore";
 import { SnapshotStore } from "../SnapshotStore";
 
 // Eventum models
-import { Snapshot, SnapshotKey } from "../../model/Snapshot";
+import { Snapshot, SnapshotKey, SnapshotId } from "../../model/Snapshot";
 
 /**
  * Manage snapshots in a DynamoDB table.
@@ -38,6 +38,25 @@ export class SnapshotDynamoDBStore extends DynamoDBStore implements SnapshotStor
       .promise()
       .then((dbResult) => {
         return dbResult.Item ? some(dbResult.Item as Snapshot) : none;
+      });
+  }
+
+  public getById(snapshotId: SnapshotId): Promise<Option<Snapshot>> {
+    const documentClient = new DynamoDB.DocumentClient();
+
+    return documentClient
+      .query({
+        TableName: this.snapshotsTableConfig.tableName,
+        IndexName: "SnapshotIdIndex",
+        KeyConditionExpression: "snapshotId = :snapshotId",
+        ExpressionAttributeValues: {
+          ":snapshotId": snapshotId
+        },
+        Limit: 1
+      })
+      .promise()
+      .then((result) => {
+        return result.Items && result.Items.length > 0 ? some(result.Items[0] as Snapshot) : none;
       });
   }
 
@@ -72,6 +91,29 @@ export class SnapshotDynamoDBStore extends DynamoDBStore implements SnapshotStor
       .then((dbResult) => {
         return;
       });
+  }
+
+  public remove(snapshotKey: SnapshotKey): Promise<void> {
+    const documentClient = new DynamoDB.DocumentClient();
+
+    return documentClient
+      .delete({
+        TableName: this.snapshotsTableConfig.tableName,
+        Key: snapshotKey
+      })
+      .promise()
+      .then((dbResult) => {
+        return;
+      });
+  }
+
+  public removeById(snapshotId: SnapshotId): Promise<void> {
+    return this.getById(snapshotId).then((snapshotOpt) => {
+      return snapshotOpt.foldL(
+        () => Promise.resolve(),
+        (snapshot) => this.remove({ aggregateId: snapshot.aggregateId, sequence: snapshot.sequence })
+      );
+    });
   }
 
   public purge(aggregateId: string): Promise<void> {
