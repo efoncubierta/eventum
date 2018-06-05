@@ -66,7 +66,7 @@ function snapshotDynamoDBStoreTests() {
       const sampleSize = 10;
       const aggregateId = TestDataGenerator.randomAggregateId();
       const startSequence = TestDataGenerator.randomSequence();
-      const snapshots = TestDataGenerator.randomSnapshots(sampleSize, aggregateId, startSequence);
+      const snapshots = TestDataGenerator.randomSnapshotArray(sampleSize, aggregateId, startSequence);
 
       const promises = [];
       for (let i = 0; i < sampleSize; i++) {
@@ -147,7 +147,7 @@ function snapshotDynamoDBStoreTests() {
       const aggregateId = TestDataGenerator.randomAggregateId();
       const startSequence = TestDataGenerator.randomSequence();
       const endSequence = startSequence + sampleSize - 1;
-      const snapshots = TestDataGenerator.randomSnapshots(sampleSize, aggregateId, startSequence);
+      const snapshots = TestDataGenerator.randomSnapshotArray(sampleSize, aggregateId, startSequence);
       const latestSnapshotKey: SnapshotKey = {
         aggregateId,
         sequence: endSequence
