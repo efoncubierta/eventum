@@ -35,6 +35,8 @@ export class TestDataGenerator {
     return {
       eventId: this.randomUUID(),
       eventType: this.randomEventType(),
+      source: faker.random.word(),
+      authority: faker.random.word(),
       occurredAt: this.randomDate(),
       aggregateId: aggregateId || this.randomAggregateId(),
       sequence: sequence && sequence > 0 ? sequence : this.randomSequence(),
@@ -65,6 +67,8 @@ export class TestDataGenerator {
   public static randomEventInput(aggregateId?: string): EventInput {
     return {
       eventType: this.randomEventType(),
+      source: faker.random.word(),
+      authority: faker.random.word(),
       aggregateId: aggregateId || this.randomAggregateId(),
       payload: this.randomPayload()
     };

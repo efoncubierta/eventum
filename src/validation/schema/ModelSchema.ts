@@ -37,6 +37,12 @@ export const EventSchema: Schema = {
     eventType: {
       type: "string"
     },
+    source: {
+      type: "string"
+    },
+    authority: {
+      type: "string"
+    },
     occurredAt: {
       $ref: "/Model/Date"
     },
@@ -50,7 +56,7 @@ export const EventSchema: Schema = {
       $ref: "/Model/EventPayload"
     }
   },
-  required: ["eventId", "eventType", "occurredAt", "aggregateId", "sequence"],
+  required: ["eventId", "eventType", "source", "authority", "occurredAt", "aggregateId", "sequence"],
   additionalProperties: false
 };
 
@@ -76,6 +82,12 @@ export const EventInputSchema: Schema = {
     eventType: {
       type: "string"
     },
+    source: {
+      type: "string"
+    },
+    authority: {
+      type: "string"
+    },
     aggregateId: {
       $ref: "/Model/AggregateID"
     },
@@ -83,7 +95,7 @@ export const EventInputSchema: Schema = {
       $ref: "/Model/EventPayload"
     }
   },
-  required: ["eventType", "aggregateId"],
+  required: ["eventType", "source", "authority", "aggregateId"],
   additionalProperties: false
 };
 

@@ -145,7 +145,7 @@ export class JournalService {
     }
 
     // build a dictionary aggregateId -> Event[]
-    const eventRequestsDic: EventInputsDic = eventInputs.reduce(
+    const eventInputsDic: EventInputsDic = eventInputs.reduce(
       (last, current) => {
         // all events must be valid according to the schema
         const result = SchemaValidator.validateEventInput(current);
@@ -164,20 +164,18 @@ export class JournalService {
 
     // iterate over each aggregateId and correlate its events to the last one created
     // this operation resolves to Promise<Event[]>[]
-    const correlatedEventsPromises: Array<Promise<Event[]>> = Object.keys(eventRequestsDic).map((aggregateId) => {
+    const correlatedEventsPromises: Array<Promise<Event[]>> = Object.keys(eventInputsDic).map((aggregateId) => {
       return StoreFactory.getEventStore()
         .getLast(aggregateId)
         .then((lastEventOpt) => {
           let nextSequence = lastEventOpt.fold(1, (e) => e.sequence + 1);
 
-          return eventRequestsDic[aggregateId].map((eventRequest) => {
+          return eventInputsDic[aggregateId].map((eventInput) => {
             return {
+              ...eventInput,
               eventId: UUID.v4(),
-              eventType: eventRequest.eventType,
               occurredAt: new Date().toISOString(),
-              aggregateId: eventRequest.aggregateId,
-              sequence: nextSequence++,
-              payload: eventRequest.payload
+              sequence: nextSequence++
             };
           });
         });
